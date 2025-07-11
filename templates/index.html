@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易在线聊天室</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #4b6cb7, #182848);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+        }
+        
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+        
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .chat-container {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+        }
+        
+        .username {
+            font-weight: bold;
+            color: #4b6cb7;
+            font-size: 0.95rem;
+        }
+        
+        .ip-address {
+            font-size: 0.8rem;
+            color: #777;
+        }
+        
+        .timestamp {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 3px;
+        }
+        
+        .message-content {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin: 8px 0;
+            word-wrap: break-word;
+        }
+        
+        .message-image {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 8px;
+            margin-top: 8px;
+            display: block;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .input-area {
+            padding: 15px;
+            background-color: white;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .input-group {
+            display: flex;
+            margin-bottom: 12px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: #4b6cb7;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        }
+        
+        .message-input {
+            display: flex;
+            margin-bottom: 12px;
+        }
+        
+        .message-input textarea {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            resize: none;
+            height: 90px;
+            transition: border-color 0.3s;
+        }
+        
+        .message-input textarea:focus {
+            border-color: #4b6cb7;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .send-btn {
+            background: linear-gradient(90deg, #4b6cb7, #182848);
+            color: white;
+            flex: 1;
+        }
+        
+        .send-btn:hover {
+            background: linear-gradient(90deg, #3a5ca5, #121f3d);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(75, 108, 183, 0.4);
+        }
+        
+        .image-btn {
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            color: white;
+        }
+        
+        .image-btn:hover {
+            background: linear-gradient(90deg, #009a87, #7db02f);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 176, 155, 0.4);
+        }
+        
+        .emoji-btn {
+            background: linear-gradient(90deg, #ff9966, #ff5e62);
+            color: white;
+        }
+        
+        .emoji-btn:hover {
+            background: linear-gradient(90deg, #ff8a50, #ff4c52);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 94, 98, 0.4);
+        }
+        
+        .emoji-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            margin-top: 8px;
+            max-height: 130px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .emoji {
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .emoji:hover {
+            transform: scale(1.2);
+        }
+        
+        .image-preview {
+            display: none;
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 130px;
+            border-radius: 8px;
+        }
+        
+        .remove-image {
+            color: #ff5e62;
+            cursor: pointer;
+            margin-top: 4px;
+            display: inline-block;
+            font-size: 0.9rem;
+        }
+        
+        .error-message {
+            color: #ff5e62;
+            text-align: center;
+            padding: 8px;
+            display: none;
+            font-size: 0.9rem;
+        }
+        
+        .info-bar {
+            background-color: rgba(75, 108, 183, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #4b6cb7;
+        }
+        
+        .typing-indicator {
+            color: #777;
+            font-style: italic;
+            margin-bottom: 8px;
+            height: 18px;
+            font-size: 0.9rem;
+        }
+        
+        .scroll-anchor {
+            height: 1px;
+            width: 100%;
+        }
+        
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 94, 98, 0.1);
+            color: #ff5e62;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            padding: 0;
+        }
+        
+        .delete-btn:hover {
+            background: rgba(255, 94, 98, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .notification-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .notification-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                height: 95vh;
+            }
+            
+            header {
+                padding: 12px;
+            }
+            
+            header h1 {
+                font-size: 1.5rem;
+                margin-bottom: 5px;
+            }
+            
+            header p {
+                font-size: 0.8rem;
+            }
+            
+            .chat-container {
+                padding: 10px;
+            }
+            
+            .message {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .input-area {
+                padding: 12px;
+            }
+            
+            .input-group, .message-input {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .message-input textarea {
+                height: 80px;
+            }
+            
+            .delete-btn {
+                top: 8px;
+                right: 8px;
+                width: 22px;
+                height: 22px;
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>简易临时在线聊天室</h1>
+            <p>无需注册，随时畅聊 • 显示用户IP • 支持图片和表情</p>
+            <button class="notification-btn" id="notificationBtn">🔔 通知</button>
+        </header>
+        
+        <div class="info-bar">
+            注意：本聊天室仅保留最近100条消息 • 图片限制2MB以内 • 新消息在底部<br>仅供个人学习交流使用，测试中，仅受邀请者允许使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服务器！
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <div class="typing-indicator" id="typingIndicator"></div>
+            <!-- 消息将在这里动态添加 -->
+            <div id="scrollAnchor"></div>
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <div class="input-area">
+            <div class="input-group">
+                <input type="text" id="username" placeholder="输入您的用户名 (默认为匿名)" maxlength="20">
+            </div>
+            
+            <div class="message-input">
+                <textarea id="message" placeholder="输入消息内容..."></textarea>
+            </div>
+            
+            <div class="emoji-container" id="emojiContainer">
+                <!-- Emojis will be added here by JavaScript -->
+            </div>
+            
+            <div class="image-preview" id="imagePreview">
+                <img id="previewImage" src="" alt="图片预览">
+                <div class="remove-image" id="removeImage">移除图片</div>
+            </div>
+            
+            <div class="buttons">
+                <button class="emoji-btn" id="emojiBtn">😀 表情</button>
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                <button class="image-btn" id="imageBtn">🖼️ 图片</button>
+                <button class="send-btn" id="sendBtn">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 常用emoji列表
+        const emojis = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", 
+                        "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", 
+                        "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", 
+                        "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", 
+                        "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", 
+                        "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", 
+                        "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", 
+                        "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", 
+                        "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈"];
+        
+        // DOM元素
+        const chatContainer = document.getElementById('chatContainer');
+        const usernameInput = document.getElementById('username');
+        const messageInput = document.getElementById('message');
+        const sendBtn = document.getElementById('sendBtn');
+        const emojiBtn = document.getElementById('emojiBtn');
+        const emojiContainer = document.getElementById('emojiContainer');
+        const imageBtn = document.getElementById('imageBtn');
+        const imageUpload = document.getElementById('imageUpload');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImage = document.getElementById('previewImage');
+        const removeImage = document.getElementById('removeImage');
+        const errorMessage = document.getElementById('errorMessage');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const scrollAnchor = document.getElementById('scrollAnchor');
+        const notificationBtn = document.getElementById('notificationBtn');
+        
+        // 当前选中的图片
+        let selectedImage = null;
+        
+        // 消息ID计数器（用于跟踪已显示的消息）
+        let lastMessageId = 0;
+        
+        // 用户IP地址
+        let userIP = '';
+        
+        // 通知权限状态
+        let notificationPermission = false;
+        
+        // 填充emoji容器
+        function populateEmojis() {
+            emojiContainer.innerHTML = '';
+            emojis.forEach(emoji => {
+                const span = document.createElement('span');
+                span.className = 'emoji';
+                span.textContent = emoji;
+                span.onclick = () => {
+                    messageInput.value += emoji;
+                    messageInput.focus();
+                };
+                emojiContainer.appendChild(span);
+            });
+        }
+        
+        // 显示/隐藏emoji选择器
+        emojiBtn.addEventListener('click', () => {
+            if (emojiContainer.style.display === 'flex') {
+                emojiContainer.style.display = 'none';
+            } else {
+                populateEmojis();
+                emojiContainer.style.display = 'flex';
+            }
+        });
+        
+        // 图片上传处理
+        imageBtn.addEventListener('click', () => {
+            imageUpload.click();
+        });
+        
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                // 检查文件类型
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                if (!validTypes.includes(file.type)) {
+                    showError('只支持JPEG、PNG或GIF格式的图片');
+                    return;
+                }
+                
+                // 检查文件大小
+                if (file.size > 2 * 1024 * 1024) {
+                    showError('图片大小不能超过2MB');
+                    return;
+                }
+                
+                // 预览图片
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    previewImage.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                    selectedImage = file;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // 移除图片
+        removeImage.addEventListener('click', () => {
+            previewImage.src = '';
+            imagePreview.style.display = 'none';
+            imageUpload.value = '';
+            selectedImage = null;
+        });
+        
+        // 显示错误信息
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 请求通知权限
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                showError("您的浏览器不支持通知功能");
+                return;
+            }
+            
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    notificationPermission = true;
+                    notificationBtn.textContent = "🔔 已启用";
+                    showError("通知功能已启用");
+                } else {
+                    notificationPermission = false;
+                    notificationBtn.textContent = "🔕 通知";
+                    showError("通知功能被拒绝");
+                }
+            });
+        }
+        
+        // 发送通知
+        function sendNotification(title, body) {
+            if (!notificationPermission) return;
+            
+            if (document.visibilityState !== 'visible') {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/733/733585.png'
+                });
+                
+                notification.onclick = () => {
+                    window.focus();
+                };
+            }
+        }
+        
+        // 初始化通知按钮
+        notificationBtn.addEventListener('click', requestNotificationPermission);
+        
+        // 发送消息
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        function sendMessage() {
+            const username = usernameInput.value.trim() || '匿名';
+            const message = messageInput.value.trim();
+            
+            // 如果没有消息和图片
+            if (!message && !selectedImage) {
+                showError('消息内容不能为空');
+                return;
+            }
+            
+            // 创建FormData对象
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('message', message);
+            if (selectedImage) {
+                formData.append('image', selectedImage);
+            }
+            
+            // 发送请求
+            fetch('/send_message', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 清空输入
+                    messageInput.value = '';
+                    imageUpload.value = '';
+                    previewImage.src = '';
+                    imagePreview.style.display = 'none';
+                    selectedImage = null;
+                    
+                    // 获取最新消息
+                    fetchMessages(true);
+                } else {
+                    showError(data.message || '发送消息失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showError('发送消息时出错');
+            });
+        }
+        
+        // 获取消息
+        function fetchMessages(scrollToBottom = false) {
+            fetch('/get_messages')
+            .then(response => response.json())
+            .then(data => {
+                if (data.messages && Array.isArray(data.messages)) {
+                    // 存储用户IP（第一次获取时）
+                    if (!userIP && data.messages.length > 0) {
+                        userIP = data.messages[0].ip || '';
+                    }
+                    
+                    // 检查是否有新消息
+                    const newMessages = data.messages.filter(msg => msg.sort_key > lastMessageId);
+                    
+                    // 如果有新消息且不是自己发送的，发送通知
+                    if (newMessages.length > 0 && notificationPermission) {
+                        const nonSelfMessages = newMessages.filter(msg => msg.ip !== userIP);
+                        if (nonSelfMessages.length > 0) {
+                            const sender = nonSelfMessages[0].username;
+                            const content = nonSelfMessages[0].message ? 
+                                nonSelfMessages[0].message.substring(0, 30) + (nonSelfMessages[0].message.length > 30 ? '...' : '') : 
+                                '发送了一张图片';
+                            
+                            sendNotification('新消息', `${sender}: ${content}`);
+                        }
+                    }
+                    
+                    renderMessages(data.messages, scrollToBottom);
+                }
+            })
+            .catch(error => {
+                console.error('获取消息失败:', error);
+            });
+        }
+        
+        // 渲染消息
+        function renderMessages(messages, scrollToBottom = false) {
+            // 检查是否有新消息
+            const newMessages = messages.filter(msg => msg.sort_key > lastMessageId);
+            
+            if (newMessages.length === 0) {
+                return; // 没有新消息，不需要更新
+            }
+            
+            // 更新最后的消息ID
+            lastMessageId = Math.max(...messages.map(msg => msg.sort_key));
+            
+            // 添加新消息到聊天容器（在滚动锚点之前）
+            newMessages.forEach(msg => {
+                const messageElement = createMessageElement(msg);
+                scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
+            });
+            
+            // 移除超出100条的消息（只保留最近的100条）
+            const allMessages = chatContainer.querySelectorAll('.message');
+            if (allMessages.length > 100) {
+                for (let i = 0; i < allMessages.length - 100; i++) {
+                    allMessages[i].remove();
+                }
+            }
+            
+            // 如果需要滚动到底部（发送新消息后）
+            if (scrollToBottom) {
+                scrollToBottomSmooth();
+            }
+        }
+        
+        // 创建消息元素
+        function createMessageElement(msg) {
+            const div = document.createElement('div');
+            div.className = 'message';
+            div.setAttribute('data-id', msg.sort_key);
+            div.innerHTML = `
+                <div class="message-header">
+                    <span class="username">${escapeHtml(msg.username)}</span>
+                    <span class="ip-address">IP: ${msg.ip}</span>
+                    <span class="timestamp">${msg.timestamp}</span>
+                </div>
+                ${msg.message ? `<div class="message-content">${escapeHtml(msg.message).replace(/\n/g, '<br>')}</div>` : ''}
+                ${msg.image ? `<img src="${msg.image}" alt="图片" class="message-image">` : ''}
+            `;
+            
+            // 如果是当前用户发送的消息，添加删除按钮
+            if (msg.ip === userIP) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.title = '撤回消息';
+                deleteBtn.innerHTML = '×';
+                deleteBtn.onclick = () => deleteMessage(msg.sort_key);
+                div.appendChild(deleteBtn);
+            }
+            
+            return div;
+        }
+        
+        // 删除消息
+        function deleteMessage(messageId) {
+            if (!confirm('确定要撤回这条消息吗？')) return;
+            
+            fetch('/delete_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message_id: messageId,
+                    ip: userIP
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 从DOM中移除消息
+                    const messageElement = document.querySelector(`.message[data-id="${messageId}"]`);
+                    if (messageElement) {
+                        messageElement.remove();
+                    }
+                } else {
+                    showError(data.message || '撤回消息失败');
+                }
+            })
+            .catch(error => {
+                console.error('撤回消息出错:', error);
+                showError('撤回消息时出错');
+            });
+        }
+        
+        // 平滑滚动到底部
+        function scrollToBottomSmooth() {
+            scrollAnchor.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 简单的HTML转义，防止XSS
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        // 初始加载消息
+        fetchMessages(true);
+        
+        // 每5秒刷新一次消息（不会强制滚动）
+        setInterval(() => fetchMessages(), 5000);
+    </script>
+</body>
+</html>
