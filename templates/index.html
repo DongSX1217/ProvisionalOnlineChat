@@ -85,10 +85,24 @@
             flex-wrap: wrap;
         }
         
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+        
         .username {
             font-weight: bold;
             color: #4b6cb7;
             font-size: 0.95rem;
+        }
+        
+        .ip-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
         }
         
         .ip-address {
@@ -96,10 +110,19 @@
             color: #777;
         }
         
+        .ip-location {
+            font-size: 0.75rem;
+            background-color: #e0e7ff;
+            color: #4b6cb7;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
         .timestamp {
             font-size: 0.8rem;
             color: #999;
-            margin-top: 3px;
+            min-width: 70px;
+            text-align: right;
         }
         
         .message-content {
@@ -291,8 +314,8 @@
         
         .delete-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 12px;
+            right: 12px;
             background: rgba(255, 94, 98, 0.1);
             color: #ff5e62;
             border-radius: 50%;
@@ -387,6 +410,12 @@
                 height: 22px;
                 font-size: 0.7rem;
             }
+            
+            .ip-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+            }
         }
     </style>
 </head>
@@ -394,12 +423,12 @@
     <div class="container">
         <header>
             <h1>简易临时在线聊天室</h1>
-            <p>无需注册，随时畅聊 • 显示用户IP • 支持图片和表情</p>
             <button class="notification-btn" id="notificationBtn">🔔 通知</button>
         </header>
         
         <div class="info-bar">
-            注意：本聊天室仅保留最近100条消息 • 图片限制2MB以内 • 新消息在底部<br>仅供个人学习交流使用，测试中，仅受邀请者允许使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服务器！
+            注意：本聊天室仅保留最近100条消息 • 图片限制2MB以内 • 新消息在底部
+            <br>仅供个人学习交流使用，测试中，仅受邀请者允许使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服务器！
         </div>
         
         <div class="chat-container" id="chatContainer">
@@ -412,7 +441,7 @@
         
         <div class="input-area">
             <div class="input-group">
-                <input type="text" id="username" placeholder="输入您的用户名 (默认为匿名)" maxlength="20">
+                <input type="text" id="username" placeholder="输入您的用户名" maxlength="20">
             </div>
             
             <div class="message-input">
@@ -429,9 +458,9 @@
             </div>
             
             <div class="buttons">
-                <button class="emoji-btn" id="emojiBtn">😀 表情</button>
+                <button class="emoji-btn" id="emojiBtn">表情</button>
                 <input type="file" id="imageUpload" accept="image/*" style="display: none;">
-                <button class="image-btn" id="imageBtn">🖼️ 图片</button>
+                <button class="image-btn" id="imageBtn">图片</button>
                 <button class="send-btn" id="sendBtn">发送</button>
             </div>
         </div>
@@ -717,18 +746,25 @@
             const div = document.createElement('div');
             div.className = 'message';
             div.setAttribute('data-id', msg.sort_key);
+            
+            // 创建消息内容
             div.innerHTML = `
                 <div class="message-header">
-                    <span class="username">${escapeHtml(msg.username)}</span>
-                    <span class="ip-address">IP: ${msg.ip}</span>
-                    <span class="timestamp">${msg.timestamp}</span>
+                    <div class="user-info">
+                        <div class="username">${escapeHtml(msg.username)}</div>
+                        <div class="ip-info">
+                            <span class="ip-address">IP: ${maskIp(msg.ip)}</span>
+                            <span class="ip-location">${msg.location || '未知'}</span>
+                        </div>
+                    </div>
+                    <div class="timestamp">${msg.timestamp}</div>
                 </div>
                 ${msg.message ? `<div class="message-content">${escapeHtml(msg.message).replace(/\n/g, '<br>')}</div>` : ''}
                 ${msg.image ? `<img src="${msg.image}" alt="图片" class="message-image">` : ''}
             `;
             
-            // 如果是当前用户发送的消息，添加删除按钮
-            if (msg.ip === userIP) {
+            // 如果是当前用户发送的消息或管理员IP，添加删除按钮
+            if (msg.ip === userIP || userIP === '127.0.0.1') {
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn';
                 deleteBtn.title = '撤回消息';
@@ -770,6 +806,20 @@
                 console.error('撤回消息出错:', error);
                 showError('撤回消息时出错');
             });
+        }
+        
+        // IP地址打码处理 (127.*.0.1 格式)
+        function maskIp(ip) {
+            if (!ip) return '';
+            
+            // 特殊处理本地IP
+            if (ip === '127.0.0.1') return ip;
+            
+            const parts = ip.split('.');
+            if (parts.length === 4) {
+                return `${parts[0]}.*.${parts[2]}.${parts[3]}`;
+            }
+            return ip;
         }
         
         // 平滑滚动到底部

@@ -4,12 +4,71 @@ import os
 import time
 from datetime import datetime
 import threading
+import requests
+import re
 
 app = Flask(__name__)
 
 # 存储聊天消息的列表（最多保留100条）
 chat_history = []
 history_lock = threading.Lock()
+
+# IP地理位置缓存
+ip_location_cache = {}
+ip_location_lock = threading.Lock()
+
+def get_ip_location(ip):
+    """获取IP的地理位置信息"""
+    # 特殊处理本地IP
+    if ip == '127.0.0.1':
+        return "本地"
+    
+    # 检查缓存中是否有该IP的地理位置
+    with ip_location_lock:
+        if ip in ip_location_cache:
+            return ip_location_cache[ip]
+    
+    try:
+        # 使用ip-api.com获取地理位置信息
+        response = requests.get(f'http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city,query&lang=zh-CN', timeout=2)
+        data = response.json()
+        
+        if data.get('status') == 'success':
+            # 提取国家、省份和城市信息
+            country = data.get('country', '')
+            region = data.get('regionName', '')
+            city = data.get('city', '')
+            
+            # 优先显示城市，其次是省份，最后是国家
+            location = city or region or country or '未知'
+            
+            # 将结果存入缓存
+            with ip_location_lock:
+                ip_location_cache[ip] = location
+            
+            return location
+        else:
+            return '未知'
+    except Exception as e:
+        app.logger.error(f"获取地理位置失败: {str(e)}")
+        return '未知'
+
+def mask_ip(ip):
+    """对IP地址进行打码处理 (127.*.0.1 格式)"""
+    if not ip:
+        return ""
+    
+    # 特殊处理本地IP
+    if ip == '127.0.0.1':
+        return ip
+    
+    # 使用正则表达式匹配IPv4地址
+    ipv4_pattern = r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$'
+    match = re.match(ipv4_pattern, ip)
+    if match:
+        return f"{match.group(1)}.*.{match.group(3)}.{match.group(4)}"
+    
+    return ip
 
 @app.route('/')
 def index():
@@ -50,6 +109,9 @@ def send_message():
         if not message and not image:
             return jsonify({'status': 'error', 'message': '消息内容不能为空'}), 400
         
+        # 获取IP地理位置
+        location = get_ip_location(user_ip)
+        
         # 创建消息对象
         message_obj = {
             'username': username,
@@ -57,7 +119,8 @@ def send_message():
             'message': message,
             'image': image,
             'timestamp': timestamp,
-            'sort_key': timestamp_sort  # 用于排序的键
+            'sort_key': timestamp_sort,
+            'location': location  # 地理位置信息
         }
         
         # 添加到聊天历史记录
@@ -98,13 +161,17 @@ def delete_message():
             return jsonify({'status': 'error', 'message': '参数错误'}), 400
         
         with history_lock:
-            # 查找消息并验证IP
+            # 查找消息
             for i, msg in enumerate(chat_history):
-                if msg['sort_key'] == message_id and msg['ip'] == user_ip:
-                    del chat_history[i]
-                    return jsonify({'status': 'success'})
+                if msg['sort_key'] == message_id:
+                    # 检查权限：管理员IP或消息发送者IP
+                    if user_ip == '127.0.0.1' or user_ip == msg['ip']:
+                        del chat_history[i]
+                        return jsonify({'status': 'success'})
+                    else:
+                        return jsonify({'status': 'error', 'message': '无权删除此消息'}), 403
             
-            return jsonify({'status': 'error', 'message': '消息不存在或无权删除'}), 404
+            return jsonify({'status': 'error', 'message': '消息不存在'}), 404
         
     except Exception as e:
         app.logger.error(f"删除消息时出错: {str(e)}")
