@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>简易在线聊天室</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- 引入Markdown渲染样式 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css">
     <style>
         * {
             margin: 0;
@@ -132,6 +134,64 @@
             word-wrap: break-word;
         }
         
+        /* Markdown内容样式 */
+        .markdown-body {
+            font-size: 1rem;
+            line-height: 1.5;
+            padding: 0;
+            background-color: transparent;
+        }
+        
+        .markdown-body pre {
+            background-color: #f6f8fa;
+            border-radius: 6px;
+            padding: 12px;
+            overflow-x: auto;
+        }
+        
+        .markdown-body code {
+            background-color: rgba(175, 184, 193, 0.2);
+            border-radius: 6px;
+            padding: 0.2em 0.4em;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9em;
+        }
+        
+        .markdown-body pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        .markdown-body img {
+            max-width: 100%;
+            box-sizing: content-box;
+            background-color: #fff;
+        }
+        
+        .markdown-body table {
+            border-spacing: 0;
+            border-collapse: collapse;
+            display: block;
+            width: 100%;
+            overflow: auto;
+            margin: 16px 0;
+        }
+        
+        .markdown-body table th,
+        .markdown-body table td {
+            padding: 6px 13px;
+            border: 1px solid #dfe2e5;
+        }
+        
+        .markdown-body table tr {
+            background-color: #fff;
+            border-top: 1px solid #c6cbd1;
+        }
+        
+        .markdown-body table tr:nth-child(2n) {
+            background-color: #f6f8fa;
+        }
+        
         .message-image {
             max-width: 100%;
             max-height: 250px;
@@ -181,6 +241,7 @@
             resize: none;
             height: 90px;
             transition: border-color 0.3s;
+            font-family: 'Roboto', sans-serif;
         }
         
         .message-input textarea:focus {
@@ -354,6 +415,98 @@
             background: rgba(255, 255, 255, 0.3);
         }
         
+        .markdown-help-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .markdown-help-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .markdown-help {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .markdown-help h2 {
+            margin-bottom: 15px;
+            color: #4b6cb7;
+        }
+        
+        .markdown-help table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .markdown-help table th,
+        .markdown-help table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .markdown-help table th {
+            background-color: #f2f2f2;
+        }
+        
+        .markdown-help pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        
+        .markdown-help code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .markdown-help-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #777;
+        }
+        
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        
         @media (max-width: 600px) {
             .container {
                 height: 95vh;
@@ -416,6 +569,11 @@
                 align-items: flex-start;
                 gap: 2px;
             }
+            
+            .markdown-help {
+                width: 90%;
+                padding: 15px;
+            }
         }
     </style>
 </head>
@@ -423,12 +581,13 @@
     <div class="container">
         <header>
             <h1>简易临时在线聊天室</h1>
+            <button class="markdown-help-btn" id="markdownHelpBtn">Markdown帮助</button>
             <button class="notification-btn" id="notificationBtn">🔔 通知</button>
         </header>
         
         <div class="info-bar">
-            注意：本聊天室仅保留最近100条消息 • 图片限制2MB以内 • 新消息在底部
-            <br>仅供个人学习交流使用，测试中，仅受邀请者允许使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服务器！
+            注意：仅保留最近100条消息 • 图片限制2MB以内 • 测试中
+            <br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服务器
         </div>
         
         <div class="chat-container" id="chatContainer">
@@ -445,7 +604,7 @@
             </div>
             
             <div class="message-input">
-                <textarea id="message" placeholder="输入消息内容..."></textarea>
+                <textarea id="message" placeholder="输入消息内容...支持Markdown格式"></textarea>
             </div>
             
             <div class="emoji-container" id="emojiContainer">
@@ -465,7 +624,81 @@
             </div>
         </div>
     </div>
+    
+    <!-- Markdown帮助弹窗 -->
+    <div class="overlay" id="overlay"></div>
+    <div class="markdown-help" id="markdownHelp">
+        <button class="markdown-help-close" id="markdownHelpClose">&times;</button>
+        <h2>Markdown语法帮助</h2>
+        <p>您可以使用以下Markdown语法格式化您的消息：</p>
+        
+        <table>
+            <tr>
+                <th>效果</th>
+                <th>语法</th>
+                <th>示例</th>
+            </tr>
+            <tr>
+                <td><strong>加粗</strong></td>
+                <td>**文本** 或 __文本__</td>
+                <td>**重要** → <strong>重要</strong></td>
+            </tr>
+            <tr>
+                <td><em>斜体</em></td>
+                <td>*文本* 或 _文本_</td>
+                <td>*斜体* → <em>斜体</em></td>
+            </tr>
+            <tr>
+                <td><del>删除线</del></td>
+                <td>~~文本~~</td>
+                <td>~~删除~~ → <del>删除</del></td>
+            </tr>
+            <tr>
+                <td>标题</td>
+                <td># 一级标题<br>## 二级标题</td>
+                <td>## 标题 → <h2 style="margin:0;font-size:1.2rem;">标题</h2></td>
+            </tr>
+            <tr>
+                <td>链接</td>
+                <td>[文本](URL)</td>
+                <td>[百度](https://baidu.com) → <a href="https://baidu.com">百度</a></td>
+            </tr>
+            <tr>
+                <td>图片</td>
+                <td>![描述](URL)</td>
+                <td>![图片](https://example.com/image.jpg)</td>
+            </tr>
+            <tr>
+                <td>代码</td>
+                <td>`代码`</td>
+                <td>`print("Hello")` → <code>print("Hello")</code></td>
+            </tr>
+            <tr>
+                <td>代码块</td>
+                <td>```语言<br>代码<br>```</td>
+                <td>```python<br>print("Hello")<br>``` → <pre><code>print("Hello")</code></pre></td>
+            </tr>
+            <tr>
+                <td>引用</td>
+                <td>&gt; 引用文本</td>
+                <td>&gt; 引用 → <blockquote style="margin:0;padding-left:10px;border-left:3px solid #ccc;">引用</blockquote></td>
+            </tr>
+            <tr>
+                <td>列表</td>
+                <td>- 项目1<br>- 项目2</td>
+                <td>- 项目 → <ul style="margin:0;"><li>项目</li></ul></td>
+            </tr>
+            <tr>
+                <td>表格</td>
+                <td>| 标题1 | 标题2 |<br>|-------|-------|<br>| 内容1 | 内容2 |</td>
+                <td>| A | B |<br>|---|---|<br>| 1 | 2 | → <table style="margin:0;"><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table></td>
+            </tr>
+        </table>
+    </div>
 
+    <!-- 引入Marked.js库用于Markdown渲染 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@3.0.7/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.3/dist/purify.min.js"></script>
     <script>
         // 常用emoji列表
         const emojis = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", 
@@ -494,6 +727,10 @@
         const typingIndicator = document.getElementById('typingIndicator');
         const scrollAnchor = document.getElementById('scrollAnchor');
         const notificationBtn = document.getElementById('notificationBtn');
+        const markdownHelpBtn = document.getElementById('markdownHelpBtn');
+        const markdownHelp = document.getElementById('markdownHelp');
+        const markdownHelpClose = document.getElementById('markdownHelpClose');
+        const overlay = document.getElementById('overlay');
         
         // 当前选中的图片
         let selectedImage = null;
@@ -506,6 +743,17 @@
         
         // 通知权限状态
         let notificationPermission = false;
+        
+        // 配置marked.js
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            sanitize: false, // 使用DOMPurify单独处理
+            highlight: function(code, lang) {
+                // 可以在这里添加代码高亮功能
+                return code;
+            }
+        });
         
         // 填充emoji容器
         function populateEmojis() {
@@ -619,6 +867,22 @@
         
         // 初始化通知按钮
         notificationBtn.addEventListener('click', requestNotificationPermission);
+        
+        // 显示/隐藏Markdown帮助
+        markdownHelpBtn.addEventListener('click', () => {
+            markdownHelp.style.display = 'block';
+            overlay.style.display = 'block';
+        });
+        
+        markdownHelpClose.addEventListener('click', () => {
+            markdownHelp.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+        
+        overlay.addEventListener('click', () => {
+            markdownHelp.style.display = 'none';
+            overlay.style.display = 'none';
+        });
         
         // 发送消息
         sendBtn.addEventListener('click', sendMessage);
@@ -759,9 +1023,25 @@
                     </div>
                     <div class="timestamp">${msg.timestamp}</div>
                 </div>
-                ${msg.message ? `<div class="message-content">${escapeHtml(msg.message).replace(/\n/g, '<br>')}</div>` : ''}
-                ${msg.image ? `<img src="${msg.image}" alt="图片" class="message-image">` : ''}
             `;
+            
+            // 添加消息内容（Markdown渲染）
+            if (msg.message) {
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content markdown-body';
+                // 使用DOMPurify清理Markdown渲染结果
+                contentDiv.innerHTML = DOMPurify.sanitize(marked(msg.message));
+                div.appendChild(contentDiv);
+            }
+            
+            // 添加图片（如果有）
+            if (msg.image) {
+                const img = document.createElement('img');
+                img.src = msg.image;
+                img.alt = '图片';
+                img.className = 'message-image';
+                div.appendChild(img);
+            }
             
             // 如果是当前用户发送的消息或管理员IP，添加删除按钮
             if (msg.ip === userIP || userIP === '127.0.0.1') {
