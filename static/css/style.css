@@ -1,0 +1,567 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 800px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+}
+
+header {
+    background: linear-gradient(90deg, #4b6cb7, #182848);
+    color: white;
+    padding: 15px;
+    text-align: center;
+    position: relative;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+}
+
+header p {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.chat-container {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background-color: #f0f4f8;
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    background: white;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    animation: fadeIn 0.3s ease-out;
+    position: relative;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+    flex-wrap: wrap;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.username {
+    font-weight: bold;
+    color: #4b6cb7;
+    font-size: 0.95rem;
+}
+
+.ip-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ip-address {
+    font-size: 0.8rem;
+    color: #777;
+}
+
+.ip-location {
+    font-size: 0.75rem;
+    background-color: #e0e7ff;
+    color: #4b6cb7;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.timestamp {
+    font-size: 0.8rem;
+    color: #999;
+    min-width: 70px;
+    text-align: right;
+}
+
+.message-content {
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 8px 0;
+    word-wrap: break-word;
+}
+
+/* Markdown内容样式 */
+.markdown-body {
+    font-size: 1rem;
+    line-height: 1.5;
+    padding: 0;
+    background-color: transparent;
+}
+
+.markdown-body pre {
+    background-color: #f6f8fa;
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+}
+
+.markdown-body code {
+    background-color: rgba(175, 184, 193, 0.2);
+    border-radius: 6px;
+    padding: 0.2em 0.4em;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.9em;
+}
+
+.markdown-body pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+.markdown-body img {
+    max-width: 100%;
+    box-sizing: content-box;
+    background-color: #fff;
+}
+
+.markdown-body table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    display: block;
+    width: 100%;
+    overflow: auto;
+    margin: 16px 0;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
+}
+
+.markdown-body table tr {
+    background-color: #fff;
+    border-top: 1px solid #c6cbd1;
+}
+
+.markdown-body table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+.message-image {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 8px;
+    margin-top: 8px;
+    display: block;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.input-area {
+    padding: 15px;
+    background-color: white;
+    border-top: 1px solid #e0e0e0;
+}
+
+.input-group {
+    display: flex;
+    margin-bottom: 12px;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+    border-color: #4b6cb7;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+}
+
+.message-input {
+    display: flex;
+    margin-bottom: 12px;
+}
+
+.message-input textarea {
+    flex: 1;
+    padding: 10px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    resize: none;
+    height: 90px;
+    transition: border-color 0.3s;
+    font-family: 'Roboto', sans-serif;
+}
+
+.message-input textarea:focus {
+    border-color: #4b6cb7;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+}
+
+.buttons {
+    display: flex;
+    gap: 8px;
+}
+
+button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.send-btn {
+    background: linear-gradient(90deg, #4b6cb7, #182848);
+    color: white;
+    flex: 1;
+}
+
+.send-btn:hover {
+    background: linear-gradient(90deg, #3a5ca5, #121f3d);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(75, 108, 183, 0.4);
+}
+
+.image-btn {
+    background: linear-gradient(90deg, #00b09b, #96c93d);
+    color: white;
+}
+
+.image-btn:hover {
+    background: linear-gradient(90deg, #009a87, #7db02f);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 176, 155, 0.4);
+}
+
+.emoji-btn {
+    background: linear-gradient(90deg, #ff9966, #ff5e62);
+    color: white;
+}
+
+.emoji-btn:hover {
+    background: linear-gradient(90deg, #ff8a50, #ff4c52);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 94, 98, 0.4);
+}
+
+.emoji-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin-top: 8px;
+    max-height: 130px;
+    overflow-y: auto;
+    display: none;
+}
+
+.emoji {
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.emoji:hover {
+    transform: scale(1.2);
+}
+
+.image-preview {
+    display: none;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 130px;
+    border-radius: 8px;
+}
+
+.remove-image {
+    color: #ff5e62;
+    cursor: pointer;
+    margin-top: 4px;
+    display: inline-block;
+    font-size: 0.9rem;
+}
+
+.error-message {
+    color: #ff5e62;
+    text-align: center;
+    padding: 8px;
+    display: none;
+    font-size: 0.9rem;
+}
+
+.info-bar {
+    background-color: rgba(75, 108, 183, 0.1);
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #4b6cb7;
+}
+
+.typing-indicator {
+    color: #777;
+    font-style: italic;
+    margin-bottom: 8px;
+    height: 18px;
+    font-size: 0.9rem;
+}
+
+.scroll-anchor {
+    height: 1px;
+    width: 100%;
+}
+
+.delete-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 94, 98, 0.1);
+    color: #ff5e62;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    padding: 0;
+}
+
+.delete-btn:hover {
+    background: rgba(255, 94, 98, 0.2);
+    transform: scale(1.1);
+}
+
+.notification-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.notification-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.markdown-help-btn {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.markdown-help-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.markdown-help {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    max-width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.markdown-help h2 {
+    margin-bottom: 15px;
+    color: #4b6cb7;
+}
+
+.markdown-help table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.markdown-help table th,
+.markdown-help table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.markdown-help table th {
+    background-color: #f2f2f2;
+}
+
+.markdown-help pre {
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-x: auto;
+}
+
+.markdown-help code {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.markdown-help-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #777;
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+@media (max-width: 600px) {
+    .container {
+        height: 95vh;
+    }
+    
+    header {
+        padding: 12px;
+    }
+    
+    header h1 {
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+    }
+    
+    header p {
+        font-size: 0.8rem;
+    }
+    
+    .chat-container {
+        padding: 10px;
+    }
+    
+    .message {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .input-area {
+        padding: 12px;
+    }
+    
+    .input-group, .message-input {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .buttons {
+        flex-direction: column;
+    }
+    
+    button {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+    
+    .message-input textarea {
+        height: 80px;
+    }
+    
+    .delete-btn {
+        top: 8px;
+        right: 8px;
+        width: 22px;
+        height: 22px;
+        font-size: 0.7rem;
+    }
+    
+    .ip-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .markdown-help {
+        width: 90%;
+        padding: 15px;
+    }
+}
