@@ -29,7 +29,7 @@ body {
 header {
     background: linear-gradient(90deg, #4b6cb7, #182848);
     color: white;
-    padding: 15px;
+    padding: 5px;
     text-align: center;
     position: relative;
 }
@@ -74,20 +74,22 @@ header p {
     margin-bottom: 8px;
     padding-bottom: 6px;
     border-bottom: 1px solid #eee;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* 允许换行 */
 }
 
 .user-info {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
+    flex-direction: row; /* 水平排列 */
+    align-items: center; /* 垂直居中 */
+    gap: 8px; /* 元素间距 */
+    flex: 1; /* 占据可用空间 */
 }
 
 .username {
     font-weight: bold;
     color: #4b6cb7;
     font-size: 0.95rem;
+    white-space: nowrap; /* 防止换行 */
 }
 
 .ip-info {
@@ -97,24 +99,22 @@ header p {
     flex-wrap: wrap;
 }
 
-.ip-address {
-    font-size: 0.8rem;
-    color: #777;
+.timestamp-area {
+    display: flex;
+    flex-direction: column; /* 日期和时间垂直排列 */
+    align-items: flex-end; /* 右对齐 */
+    min-width: 70px;
 }
 
-.ip-location {
-    font-size: 0.75rem;
-    background-color: #e0e7ff;
-    color: #4b6cb7;
-    padding: 2px 6px;
-    border-radius: 10px;
+.date {
+    font-size: 0.7rem;
+    color: #999;
+    margin-bottom: 2px;
 }
 
 .timestamp {
     font-size: 0.8rem;
     color: #999;
-    min-width: 70px;
-    text-align: right;
 }
 
 .message-content {
@@ -522,6 +522,22 @@ button {
     .message {
         padding: 10px;
         margin-bottom: 10px;
+    }
+
+    .message-header {
+        flex-direction: column; /* 改为垂直排列 */
+        align-items: flex-start; /* 左对齐 */
+    }
+    
+    .user-info {
+        width: 100%;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+    }
+    
+    .timestamp-area {
+        align-items: flex-start; /* 左对齐 */
+        margin-top: 4px; /* 与上面内容间隔 */
     }
     
     .input-area {

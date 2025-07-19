@@ -40,7 +40,7 @@ def get_ip_location(ip):
             city = data.get('city', '')
             
             # 优先显示城市，其次是省份，最后是国家
-            location = city or region or country or '未知'
+            location = region or country or '未知'
             
             # 将结果存入缓存
             with ip_location_lock:

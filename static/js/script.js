@@ -347,19 +347,67 @@ document.addEventListener('DOMContentLoaded', function() {
         div.className = 'message';
         div.setAttribute('data-id', msg.sort_key);
         
-        div.innerHTML = `
-            <div class="message-header">
-                <div class="user-info">
-                    <div class="username">${escapeHtml(msg.username)}</div>
-                    <div class="ip-info">
-                        <span class="ip-address">IP: ${maskIp(msg.ip)}</span>
-                        <span class="ip-location">${msg.location || '未知'}</span>
-                    </div>
-                </div>
-                <div class="timestamp">${msg.timestamp}</div>
-            </div>
-        `;
+        // 获取当前日期和时间
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const day = now.getDate();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
         
+        // 创建消息头部
+        const messageHeader = document.createElement('div');
+        messageHeader.className = 'message-header';
+        
+        // 用户信息容器
+        const userInfo = document.createElement('div');
+        userInfo.className = 'user-info';
+        
+        // 用户名
+        const usernameSpan = document.createElement('span');
+        usernameSpan.className = 'username';
+        usernameSpan.textContent = escapeHtml(msg.username);
+        userInfo.appendChild(usernameSpan);
+        
+        // IP信息
+        const ipInfo = document.createElement('div');
+        ipInfo.className = 'ip-info';
+        
+        // IP地址
+        const ipAddress = document.createElement('span');
+        ipAddress.className = 'ip-address';
+        ipAddress.textContent = 'IP: ' + maskIp(msg.ip);
+        ipInfo.appendChild(ipAddress);
+        
+        // 位置信息
+        const location = document.createElement('span');
+        location.className = 'ip-location';
+        location.textContent = msg.location || '未知';
+        ipInfo.appendChild(location);
+        
+        userInfo.appendChild(ipInfo);
+        messageHeader.appendChild(userInfo);
+        
+        // 时间容器
+        const timestampArea = document.createElement('div');
+        timestampArea.className = 'timestamp-area';
+        
+        // 日期
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'date';
+        dateSpan.textContent = `${month}月${day}日`;
+        timestampArea.appendChild(dateSpan);
+        
+        // 时间
+        const timestampSpan = document.createElement('span');
+        timestampSpan.className = 'timestamp';
+        timestampSpan.textContent = `${hours}:${minutes}:${seconds}`;
+        timestampArea.appendChild(timestampSpan);
+        
+        messageHeader.appendChild(timestampArea);
+        div.appendChild(messageHeader);
+        
+        // 消息内容部分保持不变
         if (msg.message) {
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content markdown-body';
@@ -380,6 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
             div.appendChild(img);
         }
         
+        // 删除按钮保持不变
         if (msg.ip === userIP || userIP === '127.0.0.1') {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
