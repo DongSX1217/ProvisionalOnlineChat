@@ -537,9 +537,25 @@ button {
         flex-direction: column;
     }
     
-    button {
-        padding: 8px 15px;
-        font-size: 0.9rem;
+    .buttons {
+        flex-direction: row; 
+        flex-wrap: wrap; 
+        gap: 6px; 
+    }
+
+    /* 添加按钮尺寸优化 */
+    .buttons button {
+        padding: 8px 10px; /* 调整内边距 */
+        font-size: 0.85rem; /* 减小字体大小 */
+        flex: 1; /* 等分宽度 */
+        min-width: 70px; /* 最小宽度 */
+    }
+
+    /* 可选：调整输入区域布局 */
+    .input-group, 
+    .message-input {
+        flex-direction: column;
+        gap: 8px;
     }
     
     .message-input textarea {
