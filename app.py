@@ -81,6 +81,12 @@ def save_highlights():
     with open(HIGHLIGHTS_FILE, 'w', encoding='utf-8') as f:
         json.dump(highlights, f, ensure_ascii=False, indent=2)
 
+def get_client_ip():
+    """获取客户端真实IP（兼容代理服务器）"""
+    if request.headers.getlist("X-Forwarded-For"):
+        return request.headers.getlist("X-Forwarded-For")[0].split(',')[0]
+    return request.remote_addr
+
 @app.route('/')
 def index():
     """主页面"""
@@ -93,7 +99,7 @@ def send_message():
         # 获取用户提交的数据
         username = request.form.get('username', '匿名').strip() or '匿名'
         message = request.form.get('message', '').strip()
-        user_ip = request.remote_addr
+        user_ip = get_client_ip()
         
         # 获取当前时间
         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -166,7 +172,7 @@ def delete_message():
     try:
         data = request.get_json()
         message_id = data.get('message_id')
-        user_ip = data.get('ip')
+        user_ip = get_client_ip()
         
         if not message_id or not user_ip:
             return jsonify({'status': 'error', 'message': '参数错误'}), 400
@@ -194,7 +200,7 @@ def toggle_highlight():
     try:
         data = request.get_json()
         message_id = data.get('message_id')
-        user_ip = data.get('ip')
+        user_ip = get_client_ip()
         
         if not message_id or not user_ip:
             return jsonify({'status': 'error', 'message': '参数错误'}), 400
