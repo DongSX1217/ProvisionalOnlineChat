@@ -622,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const parts = ip.split('.');
         if (parts.length === 4) {
-            return `${parts[0]}.*.${parts[2]}.${parts[3]}`;
+            // return `${parts[0]}.*.${parts[2]}.${parts[3]}`;
         }
         return ip;
     }
