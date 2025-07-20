@@ -1,17 +1,24 @@
 from flask import Flask, render_template, request, jsonify
 import base64
-import os
-import time
+import time,json,re,os
 from datetime import datetime
 import threading
 import requests
-import re
 
 app = Flask(__name__)
 
 # 存储聊天消息的列表（最多保留100条）
 chat_history = []
 history_lock = threading.Lock()
+
+# 新增精华消息存储 (使用文件持久化)
+HIGHLIGHTS_FILE = 'highlights.json'
+
+# 初始化精华消息列表
+highlights = []
+if os.path.exists(HIGHLIGHTS_FILE):
+    with open(HIGHLIGHTS_FILE, 'r', encoding='utf-8') as f:
+        highlights = json.load(f)
 
 # IP地理位置缓存
 ip_location_cache = {}
@@ -68,6 +75,11 @@ def mask_ip(ip):
         return f"{match.group(1)}.*.{match.group(3)}.{match.group(4)}"
     
     return ip
+
+def save_highlights():
+    """保存精华消息到文件"""
+    with open(HIGHLIGHTS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(highlights, f, ensure_ascii=False, indent=2)
 
 @app.route('/')
 def index():
@@ -176,10 +188,67 @@ def delete_message():
         app.logger.error(f"删除消息时出错: {str(e)}")
         return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
 
+@app.route('/toggle_highlight', methods=['POST'])
+def toggle_highlight():
+    """切换消息的精华状态"""
+    try:
+        data = request.get_json()
+        message_id = data.get('message_id')
+        user_ip = data.get('ip')
+        
+        if not message_id or not user_ip:
+            return jsonify({'status': 'error', 'message': '参数错误'}), 400
+        
+        # 查找原始消息
+        original_msg = None
+        with history_lock:
+            for msg in chat_history:
+                if msg['sort_key'] == message_id:
+                    original_msg = msg
+                    break
+        
+        if not original_msg:
+            return jsonify({'status': 'error', 'message': '消息不存在'}), 404
+        
+        '''
+        # 检查权限（仅管理员可设置精华）
+        if user_ip != '127.0.0.1':
+            return jsonify({'status': 'error', 'message': '无权设置精华'}), 403
+        '''
+
+        # 切换精华状态
+        is_highlighted = any(h['sort_key'] == message_id for h in highlights)
+        if is_highlighted:
+            # 移出精华
+            highlights[:] = [h for h in highlights if h['sort_key'] != message_id]
+        else:
+            # 添加为精华（复制一份独立存储）
+            highlight_msg = original_msg.copy()
+            highlight_msg['highlighted_at'] = datetime.now().timestamp()
+            highlights.append(highlight_msg)
+        
+        save_highlights()
+        return jsonify({'status': 'success', 'is_highlighted': not is_highlighted})
+    
+    except Exception as e:
+        app.logger.error(f"设置精华失败: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
+
+@app.route('/get_highlights')
+def get_highlights():
+    """获取所有精华消息"""
+    try:
+        # 按设置时间倒序排列
+        sorted_highlights = sorted(highlights, key=lambda x: x['highlighted_at'], reverse=True)
+        return jsonify({'highlights': sorted_highlights})
+    except Exception as e:
+        app.logger.error(f"获取精华消息失败: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'获取精华失败: {str(e)}'}), 500
+
 def allowed_file(filename):
     """检查文件扩展名是否允许"""
     allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)  

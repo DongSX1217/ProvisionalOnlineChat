@@ -32,11 +32,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const markdownHelp = document.querySelector('#markdownHelp');
     const markdownHelpClose = document.querySelector('#markdownHelpClose');
     const overlay = document.querySelector('#overlay');
+    const highlightsBtn = document.createElement('button'); // 精华消息按钮
+
     
     let selectedImage = null;
     let lastMessageId = 0;
     let userIP = '';
     let notificationPermission = false;
+    let highlights = []; 
     
     console.log('Element check:');
     console.log('sendBtn:', sendBtn);
@@ -44,9 +47,124 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('imageBtn:', imageBtn);
     console.log('notificationBtn:', notificationBtn);
     
+
+    // ==================== 初始化精华消息UI ====================
+    function initUI() {
+        // 创建精华消息按钮
+        highlightsBtn.className = 'highlight-btn';
+        highlightsBtn.id = 'highlightsBtn';
+        highlightsBtn.textContent = '⭐ 精华    ';
+        highlightsBtn.style.position = 'absolute';
+        highlightsBtn.style.top = '10px';
+        highlightsBtn.style.right = '82px'; // 在通知按钮左侧
+        
+        notificationBtn.parentNode.insertBefore(highlightsBtn, notificationBtn);
+
+        // 立即绑定事件
+        highlightsBtn.addEventListener('click', showHighlights);
+        console.log('精华按钮已创建:', highlightsBtn);
+
+        // 创建精华消息弹窗
+        const highlightsModal = `
+            <div class="highlights-modal" id="highlightsModal">
+                <button class="close-btn" id="closeHighlights">&times;</button>
+                <h2>精华消息</h2>
+                <div class="highlights-container" id="highlightsContainer"></div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', highlightsModal);
+    }
+
+    // ==================== 精华消息事件绑定函数 ====================
+    function bindHighlightEvents() {
+        // 精华消息按钮事件
+        highlightsBtn.addEventListener('click', showHighlights);
+        
+        // 关闭精华弹窗
+        document.getElementById('closeHighlights').addEventListener('click', hideHighlights);
+    }
+
+    // ==================== 精华消息功能 ====================
+
+    function addHighlightButton(div, msg) {
+        const highlightBtn = document.createElement('button');
+        highlightBtn.className = 'highlight-btn';
+        highlightBtn.title = msg.is_highlighted ? '移出精华' : '设为精华';
+        highlightBtn.innerHTML = msg.is_highlighted ? '⭐' : '☆';
+        
+        highlightBtn.addEventListener('click', () => {
+            toggleHighlightStatus(msg.sort_key);
+        });
+        
+        // 添加到删除按钮左侧
+        const deleteBtn = div.querySelector('.delete-btn');
+        if (deleteBtn) {
+            deleteBtn.parentNode.insertBefore(highlightBtn, deleteBtn);
+        }
+    }
+
+    // 切换精华状态
+    function toggleHighlightStatus(messageId) {
+        fetch('/toggle_highlight', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                message_id: messageId,
+                ip: userIP
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // 更新按钮状态
+                const btn = document.querySelector(`.message[data-id="${messageId}"] .highlight-btn`);
+                if (btn) {
+                    btn.innerHTML = data.is_highlighted ? '⭐' : '☆';
+                    btn.title = data.is_highlighted ? '移出精华' : '设为精华';
+                }
+            } else {
+                showError(data.message || '操作失败');
+            }
+        });
+    }
+
+    // 显示精华消息弹窗
+    function showHighlights() {
+        fetch('/get_highlights')
+        .then(response => response.json())
+        .then(data => {
+            if (data.highlights) {
+                const container = document.getElementById('highlightsContainer');
+                container.innerHTML = '';
+                
+                // 渲染精华消息
+                data.highlights.forEach(msg => {
+                    const el = createMessageElement(msg);
+                    container.appendChild(el);
+                });
+                
+                // 显示弹窗
+                document.getElementById('highlightsModal').style.display = 'block';
+                overlay.style.display = 'block';
+            }
+        });
+    }
+
+    // 隐藏精华消息弹窗
+    function hideHighlights() {
+        document.getElementById('highlightsModal').style.display = 'none';
+        overlay.style.display = 'none';
+    }
+
+
     // ==================== 事件绑定函数 ====================
     function bindEvents() {
         console.log('Binding events...');
+
+        // 精华消息按钮事件
+        if (highlightsBtn) {
+            highlightsBtn.addEventListener('click', showHighlights);
+        }
         
         // 表情按钮事件
         if (emojiBtn && emojiContainer) {
@@ -441,6 +559,12 @@ document.addEventListener('DOMContentLoaded', function() {
             div.appendChild(deleteBtn);
         }
         
+        // 检查是否是精华消息
+        //const isHighlighted = highlights.some(h => h.sort_key === msg.sort_key);
+        //if (isHighlighted) {
+        addHighlightButton(div, msg);
+        //}
+
         return div;
     }
     
@@ -520,12 +644,28 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('marked.js 未加载');
     }
-    
+
+    // 添加获取精华消息的函数
+    function fetchHighlights() {
+        fetch('/get_highlights')
+        .then(response => response.json())
+        .then(data => {
+            if (data.highlights) {
+                highlights = data.highlights;
+            }
+        });
+    }
+
+
+    initUI();
+
     // 绑定所有事件
+    bindHighlightEvents();
     bindEvents();
     
     // 初始加载消息
     fetchMessages(true);
+    fetchHighlights();
     
     // 每5秒刷新一次消息
     setInterval(() => fetchMessages(), 5000);
