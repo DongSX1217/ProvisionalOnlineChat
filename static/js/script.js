@@ -572,10 +572,10 @@ document.addEventListener('DOMContentLoaded', function() {
         //}
         
         // 优先使用传入的is_highlighted状态
-        // const isHighlighted = msg.is_highlighted !== undefined ? 
-        //                     msg.is_highlighted : 
-        //                     highlights.some(h => h.sort_key == msg.sort_key);
-        addHighlightButton(div, msg);
+        const isHighlighted = msg.is_highlighted !== undefined ? 
+                            msg.is_highlighted : 
+                            highlights.some(h => h.sort_key == msg.sort_key);
+        addHighlightButton(div, {...msg, is_highlighted: isHighlighted});
     
 
         return div;
