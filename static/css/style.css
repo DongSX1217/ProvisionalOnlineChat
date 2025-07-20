@@ -498,9 +498,20 @@ button {
 /* 精华消息按钮样式 */
 .highlight-btn {
     position: absolute;
-    top: 1px;
-    right: 120px; 
-    z-index: 20;
+    top: 15px;
+    right: 90px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.highlight-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* 精华消息弹窗 */
@@ -626,16 +637,45 @@ button {
         gap: 2px;
     }
     
-    .markdown-help {
-        width: 90%;
-        padding: 15px;
+     /* 按钮容器样式 */
+    .header-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 12px; /* 增加按钮间距 */
+        width: 100%;
+        margin-top: 8px; /* 增加标题与按钮的间距 */
+        padding: 0 10px; /* 添加左右内边距 */
+    }
+    
+    /* 统一按钮样式 */
+    .markdown-help-btn,
+    .highlight-btn,
+    .notification-btn {
+        position: static;
+        top: auto;
+        right: auto;
+        left: auto;
+        transform: none;
+        margin: 0;
+        padding: 5px 10px; /* 稍微增加按钮内边距 */
+        font-size: 0.78rem; /* 稍微增大字体 */
+        min-width: 80px; /* 设置最小宽度 */
+        flex: none; /* 取消flex增长 */
+        order: 1;
+    }
+    
+    .highlight-btn {
+        order: 2; /* 精华消息按钮排第二个 */
+    }
+    
+    .notification-btn {
+        order: 3; /* 通知按钮排第三个 */
     }
 
-    /* 精华消息按钮样式 */
-    .highlight-btn {
-        position: absolute;
-        top: 1px;
-        right: 30px; 
-        z-index: 20;
+    /* 按钮悬停效果保持不变 */
+    .markdown-help-btn:hover,
+    .highlight-btn:hover,
+    .notification-btn:hover {
+        transform: translateY(-1px); /* 减小悬停位移 */
     }
 }

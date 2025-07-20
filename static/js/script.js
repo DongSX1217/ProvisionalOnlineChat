@@ -53,10 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 创建精华消息按钮
         highlightsBtn.className = 'highlight-btn';
         highlightsBtn.id = 'highlightsBtn';
-        highlightsBtn.textContent = '⭐ 精华    ';
-        highlightsBtn.style.position = 'absolute';
-        highlightsBtn.style.top = '10px';
-        highlightsBtn.style.right = '82px';
+        highlightsBtn.textContent = '⭐ 精华  ';
         notificationBtn.parentNode.insertBefore(highlightsBtn, notificationBtn);
 
         // 创建精华消息弹窗
