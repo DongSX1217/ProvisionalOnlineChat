@@ -412,7 +412,6 @@ document.addEventListener('DOMContentLoaded', function() {
         messageHeader.appendChild(timestampArea);
         div.appendChild(messageHeader);
         
-        // 消息内容部分保持不变
         if (msg.message) {
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content markdown-body';
@@ -433,7 +432,6 @@ document.addEventListener('DOMContentLoaded', function() {
             div.appendChild(img);
         }
         
-        // 删除按钮保持不变
         if (msg.ip === userIP || userIP === '127.0.0.1') {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';

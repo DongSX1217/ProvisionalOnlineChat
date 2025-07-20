@@ -30,7 +30,7 @@ def get_ip_location(ip):
     
     try:
         # 使用ip-api.com获取地理位置信息
-        response = requests.get(f'http://ip-api.com/json/{ip}?fields=status,message,country,regionName,query&lang=zh-CN', timeout=2)
+        response = requests.get(f'http://ip-api.com/json/{ip}?fields=status,message,country,regionName,query&lang=zh-CN', timeout=3)
         data = response.json()
         
         if data.get('status') == 'success':

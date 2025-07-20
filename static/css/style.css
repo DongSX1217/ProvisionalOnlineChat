@@ -101,15 +101,13 @@ header p {
 
 .timestamp-area {
     display: flex;
-    flex-direction: column; /* 日期和时间垂直排列 */
     align-items: flex-end; /* 右对齐 */
     min-width: 70px;
 }
 
 .date {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     color: #999;
-    margin-bottom: 2px;
 }
 
 .timestamp {
@@ -536,8 +534,7 @@ button {
     }
     
     .timestamp-area {
-        align-items: flex-start; /* 左对齐 */
-        margin-top: 4px; /* 与上面内容间隔 */
+        margin-top: 4px; 
     }
     
     .input-area {
@@ -559,15 +556,13 @@ button {
         gap: 6px; 
     }
 
-    /* 添加按钮尺寸优化 */
     .buttons button {
-        padding: 8px 10px; /* 调整内边距 */
-        font-size: 0.85rem; /* 减小字体大小 */
-        flex: 1; /* 等分宽度 */
-        min-width: 70px; /* 最小宽度 */
+        padding: 8px 10px; 
+        font-size: 0.85rem; 
+        flex: 1; 
+        min-width: 70px; 
     }
 
-    /* 可选：调整输入区域布局 */
     .input-group, 
     .message-input {
         flex-direction: column;
@@ -587,7 +582,6 @@ button {
     }
     
     .ip-info {
-        flex-direction: column;
         align-items: flex-start;
         gap: 2px;
     }
