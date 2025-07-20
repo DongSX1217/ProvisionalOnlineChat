@@ -182,7 +182,7 @@ def delete_message():
             for i, msg in enumerate(chat_history):
                 if msg['sort_key'] == message_id:
                     # 检查权限：管理员IP或消息发送者IP
-                    if user_ip == '127.0.0.1' or user_ip == msg['ip']:
+                    if user_ip in ['127.0.0.1','223.160.176.6'] or user_ip == msg['ip']:
                         del chat_history[i]
                         return jsonify({'status': 'success'})
                     else:
