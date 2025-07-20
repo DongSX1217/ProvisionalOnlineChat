@@ -686,4 +686,12 @@ button {
     .notification-btn:hover {
         transform: translateY(-1px); /* 减小悬停位移 */
     }
+
+    /* 精华消息按钮样式 */
+    .highlight-btn {
+        position: absolute;
+        top: 1px;
+        right: 30px; 
+        z-index: 20;
+    }
 }
