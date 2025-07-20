@@ -95,15 +95,15 @@ document.addEventListener('DOMContentLoaded', function() {
             sendBtn.addEventListener('click', sendMessage);
         }
         
-        // 修改消息输入框回车事件为keydown
-    if (messageInput) {
-        messageInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-    }
+        // Shift+Enter事件
+        if (messageInput) {
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
         
         console.log('Events bound successfully');
     }
