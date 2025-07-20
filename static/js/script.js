@@ -565,14 +565,14 @@ document.addEventListener('DOMContentLoaded', function() {
             div.appendChild(img);
         }
         
-        if (msg.ip === userIP || userIP === '127.0.0.1') {
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.title = '撤回消息';
-            deleteBtn.innerHTML = '×';
-            deleteBtn.addEventListener('click', () => deleteMessage(msg.sort_key));
-            div.appendChild(deleteBtn);
-        }
+        //if (msg.ip === userIP || userIP === '127.0.0.1') {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.title = '撤回消息';
+        deleteBtn.innerHTML = '×';
+        deleteBtn.addEventListener('click', () => deleteMessage(msg.sort_key));
+        div.appendChild(deleteBtn);
+        //}
         
         // 优先使用传入的is_highlighted状态
         const isHighlighted = msg.is_highlighted !== undefined ? 
