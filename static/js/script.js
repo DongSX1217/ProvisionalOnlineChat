@@ -575,7 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // const isHighlighted = msg.is_highlighted !== undefined ? 
         //                     msg.is_highlighted : 
         //                     highlights.some(h => h.sort_key == msg.sort_key);
-        addHighlightButton(div, {...msg, is_highlighted: isHighlighted});
+        addHighlightButton(div, msg);
     
 
         return div;
