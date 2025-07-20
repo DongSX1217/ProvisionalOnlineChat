@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==================== 初始化精华消息UI ====================
     function HighlightUI() {
         // 创建精华消息按钮
-        highlightsBtn.className = 'highlight-btn';
+        highlightsBtn.className = 'highlights-btn';
         highlightsBtn.id = 'highlightsBtn';
         highlightsBtn.textContent = '⭐ 精华  ';
         notificationBtn.parentNode.insertBefore(highlightsBtn, notificationBtn);

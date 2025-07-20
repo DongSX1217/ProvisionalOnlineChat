@@ -495,8 +495,16 @@ button {
     z-index: 999;
 }
 
-/* 精华消息按钮样式 */
+/* 设置精华消息按钮样式 */
 .highlight-btn {
+    position: absolute;
+    top: 1px;
+    right: 120px; 
+    z-index: 20;
+}
+
+/* 精华消息按钮样式 */
+.highlights-btn {
     position: absolute;
     top: 15px;
     right: 90px;
@@ -510,7 +518,7 @@ button {
     transition: all 0.3s;
 }
 
-.highlight-btn:hover {
+.highlights-btn:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
@@ -649,7 +657,7 @@ button {
     
     /* 统一按钮样式 */
     .markdown-help-btn,
-    .highlight-btn,
+    .highlights-btn,
     .notification-btn {
         position: static;
         top: auto;
@@ -664,7 +672,7 @@ button {
         order: 1;
     }
     
-    .highlight-btn {
+    .highlights-btn {
         order: 2; /* 精华消息按钮排第二个 */
     }
     
@@ -674,7 +682,7 @@ button {
 
     /* 按钮悬停效果保持不变 */
     .markdown-help-btn:hover,
-    .highlight-btn:hover,
+    .highlights-btn:hover,
     .notification-btn:hover {
         transform: translateY(-1px); /* 减小悬停位移 */
     }
