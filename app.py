@@ -29,6 +29,9 @@ if os.path.exists(HIGHLIGHTS_FILE):
 ip_location_cache = {}
 ip_location_lock = threading.Lock()
 
+# 管理员IP
+admin = ['127.0.0.1','223.160.176.6','27.225.45.194']
+
 def get_ip_location(ip):
     """获取IP的地理位置信息"""
     # 特殊处理本地IP
@@ -201,7 +204,7 @@ def delete_message():
             for i, msg in enumerate(chat_history):
                 if msg['sort_key'] == message_id:
                     # 检查权限
-                    if user_ip in ['127.0.0.1','223.160.176.6'] or user_ip == msg['ip']:
+                    if (user_ip in admin) or (user_ip == msg['ip']):
                         del chat_history[i]
                         save_chat_history()  # 新增保存操作
                         return jsonify({'status': 'success'})
