@@ -615,7 +615,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // IP地址打码处理
     function maskIp(ip) {
         if (!ip) return '';
-        if (ip === '127.0.0.1') return ip;
         
         const parts = ip.split('.');
         if (parts.length === 4) {

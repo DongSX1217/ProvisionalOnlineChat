@@ -4,6 +4,7 @@ import time,json,re,os
 from datetime import datetime
 import threading
 import requests,smtplib
+from pathlib import Path
 
 app = Flask(__name__)
 
@@ -11,8 +12,12 @@ app = Flask(__name__)
 chat_history = []
 history_lock = threading.Lock()
 
-# 新增精华消息存储 (使用文件持久化)
-HIGHLIGHTS_FILE = 'highlights.json'
+# 存储路径定义
+HIGHLIGHTS_FILE = './data/highlights.json'
+CHAT_HISTORY_FILE = './data/chat_history.json'
+
+# 创建数据目录
+Path('./data').mkdir(exist_ok=True)
 
 # 初始化精华消息列表
 highlights = []
@@ -64,10 +69,6 @@ def mask_ip(ip):
     if not ip:
         return ""
     
-    # 特殊处理本地IP
-    if ip == '127.0.0.1':
-        return ip
-    
     # 使用正则表达式匹配IPv4地址
     ipv4_pattern = r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$'
     match = re.match(ipv4_pattern, ip)
@@ -86,6 +87,23 @@ def get_client_ip():
     if request.headers.getlist("X-Forwarded-For"):
         return request.headers.getlist("X-Forwarded-For")[0].split(',')[0]
     return request.remote_addr
+
+def allowed_file(filename):
+    """检查文件扩展名是否允许"""
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+def load_chat_history():
+    """从文件加载聊天记录"""
+    if os.path.exists(CHAT_HISTORY_FILE):
+        with open(CHAT_HISTORY_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+def save_chat_history():
+    """保存聊天记录到文件"""
+    with open(CHAT_HISTORY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(chat_history, f, ensure_ascii=False, indent=2)
 
 @app.route('/')
 def index():
@@ -146,6 +164,7 @@ def send_message():
             # 保持只保留最近的100条消息
             if len(chat_history) > 100:
                 chat_history.pop(0)
+            save_chat_history()  # 新增保存操作
         
         return jsonify({'status': 'success'})
     
@@ -181,9 +200,10 @@ def delete_message():
             # 查找消息
             for i, msg in enumerate(chat_history):
                 if msg['sort_key'] == message_id:
-                    # 检查权限：管理员IP或消息发送者IP
+                    # 检查权限
                     if user_ip in ['127.0.0.1','223.160.176.6'] or user_ip == msg['ip']:
                         del chat_history[i]
+                        save_chat_history()  # 新增保存操作
                         return jsonify({'status': 'success'})
                     else:
                         return jsonify({'status': 'error', 'message': '无权删除此消息'}), 403
@@ -196,7 +216,6 @@ def delete_message():
 
 @app.route('/toggle_highlight', methods=['POST'])
 def toggle_highlight():
-    """切换消息的精华状态"""
     try:
         data = request.get_json()
         message_id = data.get('message_id')
@@ -216,24 +235,19 @@ def toggle_highlight():
         if not original_msg:
             return jsonify({'status': 'error', 'message': '消息不存在'}), 404
         
-        '''
-        # 检查权限（仅管理员可设置精华）
-        if user_ip != '127.0.0.1':
-            return jsonify({'status': 'error', 'message': '无权设置精华'}), 403
-        '''
-
         # 切换精华状态
         is_highlighted = any(h['sort_key'] == message_id for h in highlights)
         if is_highlighted:
             # 移出精华
             highlights[:] = [h for h in highlights if h['sort_key'] != message_id]
         else:
-            # 添加为精华（复制一份独立存储）
+            # 添加为精华
             highlight_msg = original_msg.copy()
             highlight_msg['highlighted_at'] = datetime.now().timestamp()
             highlights.append(highlight_msg)
         
         save_highlights()
+        save_chat_history()  # 新增保存操作
         return jsonify({'status': 'success', 'is_highlighted': not is_highlighted})
     
     except Exception as e:
@@ -251,10 +265,6 @@ def get_highlights():
         app.logger.error(f"获取精华消息失败: {str(e)}")
         return jsonify({'status': 'error', 'message': f'获取精华失败: {str(e)}'}), 500
 
-def allowed_file(filename):
-    """检查文件扩展名是否允许"""
-    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
 if __name__ == '__main__':
+    chat_history = load_chat_history() # 初始化时加载聊天记录
     app.run(host='0.0.0.0', port=5000, debug=True)  
