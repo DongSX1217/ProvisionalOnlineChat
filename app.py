@@ -36,6 +36,55 @@ admin = ['127.0.0.1','223.160.176.6','27.225.45.194']
 # 密码配置
 SECRET_PASSWORD = "114514"
 
+# 配置变量定义 (可轻松添加更多变量)
+CONFIG_VARS = {
+    'site_title': {
+        'default': "我的聊天网站",
+        'description': "网站标题"
+    },
+    'max_messages': {
+        'default': 100,
+        'description': "最大消息数"
+    },
+    'welcome_message': {
+        'default': "欢迎来到聊天室！",
+        'description': "欢迎消息"
+    },
+    'admin_contact': {
+        'default': "admin@example.com",
+        'description': "管理员联系方式"
+    }
+}
+
+# 当前配置变量值
+config_values = {}
+
+def load_config_vars():
+    """从文件加载配置变量"""
+    global config_values
+    if os.path.exists(TEST_VARS_FILE):
+        try:
+            with open(TEST_VARS_FILE, 'r', encoding='utf-8') as f:
+                saved_vars = json.load(f)
+                # 合并保存的变量和默认配置
+                config_values = {
+                    name: saved_vars.get(name, data['default'])
+                    for name, data in CONFIG_VARS.items()
+                }
+        except Exception as e:
+            app.logger.error(f"加载配置变量失败: {str(e)}")
+            config_values = {name: data['default'] for name, data in CONFIG_VARS.items()}
+    else:
+        config_values = {name: data['default'] for name, data in CONFIG_VARS.items()}
+
+def save_config_vars():
+    """保存配置变量到文件"""
+    try:
+        with open(TEST_VARS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config_values, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        app.logger.error(f"保存配置变量失败: {str(e)}")
+
 def get_ip_location(ip):
     """获取IP的地理位置信息"""
     # 特殊处理本地IP
@@ -112,29 +161,6 @@ def save_chat_history():
     with open(CHAT_HISTORY_FILE, 'w', encoding='utf-8') as f:
         json.dump(chat_history, f, ensure_ascii=False, indent=2)
 
-def load_test_variables():
-    """从文件加载测试变量"""
-    if os.path.exists(TEST_VARS_FILE):
-        try:
-            with open(TEST_VARS_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                return data.get('test_a', "变量A的值"), data.get('test_b', 12345), data.get('test_c', ["测试", "数据", 114514])
-        except Exception as e:
-            app.logger.error(f"加载测试变量失败: {str(e)}")
-    return "变量A的值", 12345, ["测试", "数据", 114514]
-
-def save_test_variables():
-    """保存测试变量到文件"""
-    try:
-        with open(TEST_VARS_FILE, 'w', encoding='utf-8') as f:
-            json.dump({
-                'test_a': test_a,
-                'test_b': test_b,
-                'test_c': test_c
-            }, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        app.logger.error(f"保存测试变量失败: {str(e)}")
-
 @app.route('/')
 def index():
     """主页面"""
@@ -151,40 +177,36 @@ def check_password():
     try:
         password = request.form.get('password', '').strip()
         if password == SECRET_PASSWORD:
-            # 密码正确，返回测试变量
+            # 返回所有配置变量及其描述
             return jsonify({
                 'status': 'success',
-                'test_a': test_a,
-                'test_b': test_b,
-                'test_c': test_c
+                'config_vars': config_values,
+                'var_descriptions': {name: data['description'] for name, data in CONFIG_VARS.items()}
             })
         else:
             return jsonify({'status': 'error', 'message': '密码错误，请重试！'})
     except Exception as e:
         app.logger.error(f"验证密码时出错: {str(e)}")
         return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
-    
+
 @app.route('/update_variables', methods=['POST'])
 def update_variables():
-    """更新测试变量"""
+    """更新配置变量"""
     try:
         data = request.get_json()
         
-        # 更新全局变量
-        global test_a, test_b, test_c
-        test_a = data.get('test_a', test_a)
-        test_b = data.get('test_b', test_b)
-        test_c = data.get('test_c', test_c)
+        # 更新所有接收到的变量
+        for name, value in data.items():
+            if name in CONFIG_VARS:
+                config_values[name] = value
         
         # 保存到文件
-        save_test_variables()
+        save_config_vars()
         
         # 返回更新后的值
         return jsonify({
             'status': 'success',
-            'test_a': test_a,
-            'test_b': test_b,
-            'test_c': test_c
+            'config_vars': config_values
         })
     except Exception as e:
         app.logger.error(f"更新变量时出错: {str(e)}")
@@ -347,5 +369,5 @@ def get_highlights():
 
 if __name__ == '__main__':
     chat_history = load_chat_history() # 初始化时加载聊天记录
-    test_a, test_b, test_c = load_test_variables()
+    load_config_vars()  # 加载配置变量
     app.run(host='0.0.0.0', port=5000, debug=True)  
