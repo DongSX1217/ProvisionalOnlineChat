@@ -15,6 +15,7 @@ history_lock = threading.Lock()
 # 存储路径定义
 HIGHLIGHTS_FILE = './data/highlights.json'
 CHAT_HISTORY_FILE = './data/chat_history.json'
+TEST_VARS_FILE = './data/test_variables.json'
 
 # 创建数据目录
 Path('./data').mkdir(exist_ok=True)
@@ -31,6 +32,9 @@ ip_location_lock = threading.Lock()
 
 # 管理员IP
 admin = ['127.0.0.1','223.160.176.6','27.225.45.194']
+
+# 密码配置
+SECRET_PASSWORD = "114514"
 
 def get_ip_location(ip):
     """获取IP的地理位置信息"""
@@ -108,10 +112,83 @@ def save_chat_history():
     with open(CHAT_HISTORY_FILE, 'w', encoding='utf-8') as f:
         json.dump(chat_history, f, ensure_ascii=False, indent=2)
 
+def load_test_variables():
+    """从文件加载测试变量"""
+    if os.path.exists(TEST_VARS_FILE):
+        try:
+            with open(TEST_VARS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data.get('test_a', "变量A的值"), data.get('test_b', 12345), data.get('test_c', ["测试", "数据", 114514])
+        except Exception as e:
+            app.logger.error(f"加载测试变量失败: {str(e)}")
+    return "变量A的值", 12345, ["测试", "数据", 114514]
+
+def save_test_variables():
+    """保存测试变量到文件"""
+    try:
+        with open(TEST_VARS_FILE, 'w', encoding='utf-8') as f:
+            json.dump({
+                'test_a': test_a,
+                'test_b': test_b,
+                'test_c': test_c
+            }, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        app.logger.error(f"保存测试变量失败: {str(e)}")
+
 @app.route('/')
 def index():
     """主页面"""
     return render_template('index.html')
+
+@app.route('/manage')
+def manage_html():
+    """管理页面"""
+    return render_template('manage.html')
+
+@app.route('/check_password', methods=['POST'])
+def check_password():
+    """验证密码"""
+    try:
+        password = request.form.get('password', '').strip()
+        if password == SECRET_PASSWORD:
+            # 密码正确，返回测试变量
+            return jsonify({
+                'status': 'success',
+                'test_a': test_a,
+                'test_b': test_b,
+                'test_c': test_c
+            })
+        else:
+            return jsonify({'status': 'error', 'message': '密码错误，请重试！'})
+    except Exception as e:
+        app.logger.error(f"验证密码时出错: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
+    
+@app.route('/update_variables', methods=['POST'])
+def update_variables():
+    """更新测试变量"""
+    try:
+        data = request.get_json()
+        
+        # 更新全局变量
+        global test_a, test_b, test_c
+        test_a = data.get('test_a', test_a)
+        test_b = data.get('test_b', test_b)
+        test_c = data.get('test_c', test_c)
+        
+        # 保存到文件
+        save_test_variables()
+        
+        # 返回更新后的值
+        return jsonify({
+            'status': 'success',
+            'test_a': test_a,
+            'test_b': test_b,
+            'test_c': test_c
+        })
+    except Exception as e:
+        app.logger.error(f"更新变量时出错: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'更新失败: {str(e)}'}), 500
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
@@ -270,4 +347,5 @@ def get_highlights():
 
 if __name__ == '__main__':
     chat_history = load_chat_history() # 初始化时加载聊天记录
+    test_a, test_b, test_c = load_test_variables()
     app.run(host='0.0.0.0', port=5000, debug=True)  

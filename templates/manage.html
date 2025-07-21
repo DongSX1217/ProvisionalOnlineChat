@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head> 
+    <title>管理页面</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .password-form {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .result-container {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: none;
+        }
+        .edit-container {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: none;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+        .success-message {
+            color: green;
+            margin-top: 10px;
+        }
+        input[type="password"], input[type="text"] {
+            padding: 8px;
+            width: 200px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            width: 80px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>欢迎使用管理页面！</h2>
+    
+    <div class="password-form">
+        <h3>请输入管理密码</h3>
+        <input type="password" id="passwordInput" placeholder="输入密码">
+        <button id="submitPassword">验证</button>
+        <div id="errorMessage" class="error-message"></div>
+    </div>
+    
+    <div id="resultContainer" class="result-container">
+        <h3>当前变量值：</h3>
+        <p><strong>test_a:</strong> <span id="testA"></span></p>
+        <p><strong>test_b:</strong> <span id="testB"></span></p>
+        <p><strong>test_c:</strong> <span id="testC"></span></p>
+    </div>
+
+    <div id="editContainer" class="edit-container">
+        <h3>编辑变量值</h3>
+        <div class="form-group">
+            <label for="editA">test_a:</label>
+            <input type="text" id="editA">
+        </div>
+        <div class="form-group">
+            <label for="editB">test_b:</label>
+            <input type="text" id="editB">
+        </div>
+        <div class="form-group">
+            <label for="editC">test_c:</label>
+            <input type="text" id="editC" placeholder='格式: ["值1","值2",数字]'>
+        </div>
+        <button id="saveChanges">保存修改</button>
+        <div id="saveMessage" class="success-message"></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // 密码验证
+            $('#submitPassword').click(function() {
+                const password = $('#passwordInput').val();
+                if (!password) {
+                    $('#errorMessage').text('请输入密码');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/check_password',
+                    method: 'POST',
+                    data: { password: password },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            // 密码正确，显示结果和编辑表单
+                            $('#errorMessage').text('');
+                            displayVariables(response);
+                            $('#resultContainer').show();
+                            $('#editContainer').show();
+                        } else {
+                            // 密码错误
+                            $('#errorMessage').text(response.message);
+                            $('#resultContainer').hide();
+                            $('#editContainer').hide();
+                        }
+                    },
+                    error: function() {
+                        $('#errorMessage').text('验证密码时出错');
+                    }
+                });
+            });
+
+            // 保存修改
+            $('#saveChanges').click(function() {
+                const newA = $('#editA').val();
+                const newB = $('#editB').val();
+                let newC;
+                
+                try {
+                    newC = JSON.parse($('#editC').val());
+                } catch(e) {
+                    $('#saveMessage').text('test_c 格式错误，必须为有效的JSON数组').removeClass('success-message').addClass('error-message');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/update_variables',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        test_a: newA,
+                        test_b: newB,
+                        test_c: newC
+                    }),
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            $('#saveMessage').text('变量修改成功！').removeClass('error-message').addClass('success-message');
+                            displayVariables(response);
+                        } else {
+                            $('#saveMessage').text(response.message).removeClass('success-message').addClass('error-message');
+                        }
+                    },
+                    error: function() {
+                        $('#saveMessage').text('保存时出错').removeClass('success-message').addClass('error-message');
+                    }
+                });
+            });
+
+            // 显示变量值
+            function displayVariables(data) {
+                $('#testA').text(data.test_a);
+                $('#testB').text(data.test_b);
+                $('#testC').text(JSON.stringify(data.test_c));
+                
+                $('#editA').val(data.test_a);
+                $('#editB').val(data.test_b);
+                $('#editC').val(JSON.stringify(data.test_c));
+            }
+        });
+    </script>
+</body>
+</html>
