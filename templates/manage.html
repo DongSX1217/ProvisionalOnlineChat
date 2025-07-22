@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
-<head> 
+<head>
     <title>管理页面</title>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="/static/js/manage.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -76,136 +77,12 @@
     </div>
     
     <div id="resultContainer" class="result-container">
-        <h3>当前变量值：</h3>
-        <p><strong>test_a:</strong> <span id="testA"></span></p>
-        <p><strong>test_b:</strong> <span id="testB"></span></p>
-        <p><strong>test_c:</strong> <span id="testC"></span></p>
+        <h3>当前配置值：</h3>
+        <!-- 动态内容 -->
     </div>
 
     <div id="editContainer" class="edit-container">
-        <h3>编辑变量值</h3>
-        <div class="form-group">
-            <label for="editA">test_a:</label>
-            <input type="text" id="editA">
-        </div>
-        <div class="form-group">
-            <label for="editB">test_b:</label>
-            <input type="text" id="editB">
-        </div>
-        <div class="form-group">
-            <label for="editC">test_c:</label>
-            <input type="text" id="editC" placeholder='格式: ["值1","值2",数字]'>
-        </div>
-        <button id="saveChanges">保存修改</button>
-        <div id="saveMessage" class="success-message"></div>
+        <!-- 编辑表单将在这里动态生成 -->
     </div>
-
-    <script>
-        $(document).ready(function() {
-    // 密码验证
-    $('#submitPassword').click(function() {
-        const password = $('#passwordInput').val();
-        if (!password) {
-            $('#errorMessage').text('请输入密码');
-            return;
-        }
-        
-        $.ajax({
-            url: '/check_password',
-            method: 'POST',
-            data: { password: password },
-            success: function(response) {
-                if (response.status === 'success') {
-                    // 密码正确，显示结果和编辑表单
-                    $('#errorMessage').text('');
-                    displayVariables(response);
-                    $('#resultContainer').show();
-                    $('#editContainer').show();
-                } else {
-                    // 密码错误
-                    $('#errorMessage').text(response.message);
-                    $('#resultContainer').hide();
-                    $('#editContainer').hide();
-                }
-            },
-            error: function() {
-                $('#errorMessage').text('验证密码时出错');
-            }
-        });
-    });
-
-    // 保存修改
-    $('#saveChanges').click(function() {
-        const formData = {};
-        $('.edit-form-group').each(function() {
-            const name = $(this).data('name');
-            let value = $(this).find('input').val();
-            
-            // 尝试解析JSON (对于数组/对象类型)
-            try {
-                value = JSON.parse(value);
-            } catch(e) {
-                // 如果不是JSON格式，保持原值
-            }
-            
-            formData[name] = value;
-        });
-        
-        $.ajax({
-            url: '/update_variables',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(formData),
-            success: function(response) {
-                if (response.status === 'success') {
-                    $('#saveMessage').text('配置修改成功！').removeClass('error-message').addClass('success-message');
-                    displayVariables(response);
-                } else {
-                    $('#saveMessage').text(response.message).removeClass('success-message').addClass('error-message');
-                }
-            },
-            error: function() {
-                $('#saveMessage').text('保存时出错').removeClass('success-message').addClass('error-message');
-            }
-        });
-    });
-
-    // 显示变量值
-    function displayVariables(data) {
-        const resultContainer = $('#resultContainer');
-        const editContainer = $('#editContainer');
-        
-        // 清空容器
-        resultContainer.empty();
-        editContainer.empty();
-        
-        // 添加标题
-        resultContainer.append('<h3>当前配置值：</h3>');
-        editContainer.append('<h3>编辑配置值</h3>');
-        
-        // 遍历所有配置变量
-        for (const [name, value] of Object.entries(data.config_vars)) {
-            const description = data.var_descriptions?.[name] || name;
-            
-            // 显示当前值
-            resultContainer.append(
-                `<p><strong>${description}:</strong> <span class="value-${name}">${JSON.stringify(value)}</span></p>`
-            );
-            
-            // 添加编辑表单
-            editContainer.append(`
-                <div class="form-group edit-form-group" data-name="${name}">
-                    <label>${description}:</label>
-                    <input type="text" value='${JSON.stringify(value)}'>
-                </div>
-            `);
-        }
-        
-        // 添加保存按钮
-        editContainer.append('<button id="saveChanges">保存修改</button>');
-        editContainer.append('<div id="saveMessage" class="success-message"></div>');
-    }
-});
-    </script>
 </body>
 </html>

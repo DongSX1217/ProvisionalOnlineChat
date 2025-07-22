@@ -193,11 +193,22 @@ def update_variables():
     """更新配置变量"""
     try:
         data = request.get_json()
-        
+        if not data:
+            return jsonify({'status': 'error', 'message': '无效的JSON数据'}), 400
+            
         # 更新所有接收到的变量
         for name, value in data.items():
             if name in CONFIG_VARS:
-                config_values[name] = value
+                # 特殊处理数组类型
+                if isinstance(value, str) and name in ['admin_ips', 'blocked_ips']:
+                    try:
+                        config_values[name] = json.loads(value)
+                    except json.JSONDecodeError:
+                        config_values[name] = [ip.strip() for ip in value.split(',') if ip.strip()]
+                elif isinstance(value, list):
+                    config_values[name] = value
+                else:
+                    config_values[name] = value
         
         # 保存到文件
         save_config_vars()
@@ -208,7 +219,7 @@ def update_variables():
             'config_vars': config_values
         })
     except Exception as e:
-        app.logger.error(f"更新变量时出错: {str(e)}")
+        app.logger.error(f"更新变量时出错: {str(e)}", exc_info=True)
         return jsonify({'status': 'error', 'message': f'更新失败: {str(e)}'}), 500
 
 @app.route('/send_message', methods=['POST'])
@@ -373,6 +384,8 @@ def get_highlights():
         return jsonify({'status': 'error', 'message': f'获取精华失败: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    chat_history = load_chat_history() # 初始化时加载聊天记录
-    load_config_vars()  # 加载配置变量
-    app.run(host='0.0.0.0', port=5000, debug=True)  
+    Path('./data').mkdir(exist_ok=True) # 确保数据目录存在
+    chat_history = load_chat_history() # 初始化时加载聊天记录 
+    load_config_vars() 
+    app.logger.info(f"初始配置: {config_values}") # 初始化时打印配置
+    app.run(host='0.0.0.0', port=5000, debug=True)
