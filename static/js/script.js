@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let userIP = '';
     let notificationPermission = false;
     let highlights = []; 
+    let adminIps = [];
+    let blockedIps = [];
     
     console.log('Element check:');
     console.log('sendBtn:', sendBtn);
@@ -249,6 +251,14 @@ document.addEventListener('DOMContentLoaded', function() {
             emojiContainer.style.display = 'flex';
         }
     }
+
+    function isAdminUser() {
+        return adminIps.includes(userIP);
+    }
+
+    function isBlockedUser() {
+        return blockedIps.includes(userIP);
+    }
     
     // 填充表情
     function populateEmojis() {
@@ -355,10 +365,27 @@ document.addEventListener('DOMContentLoaded', function() {
             sendMessage();
         }
     }
+
+    // 添加获取配置值的函数
+    function getConfigValue(key) {
+        return window.config_values?.[key] || [];
+    }
     
     // 发送消息
     function sendMessage() {
         console.log('Sending message...');
+
+        // 获取用户IP
+        if (!userIP) {
+            showError('无法获取用户IP');
+            return;
+        }
+        
+        // 检查是否在限制IP名单中
+        if (blockedIps.includes(userIP)) {
+            showError('您的IP已被限制发言');
+            return;
+        }
         
         const username = usernameInput ? usernameInput.value.trim() || '匿名' : '匿名';
         const message = messageInput ? messageInput.value.trim() : '';
@@ -401,33 +428,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 获取消息
     function fetchMessages(scrollToBottom = false) {
-        fetch('/get_messages')
+        // 获取配置信息
+        fetch('/get_config')
+        .then(response => response.json())
+        .then(config => {
+            adminIps = config.admin_ips || [];
+            blockedIps = config.blocked_ips || [];
+            
+            // 获取消息
+            return fetch('/get_messages');
+        })
         .then(response => response.json())
         .then(data => {
             if (data.messages && Array.isArray(data.messages)) {
+                // 设置userIP（如果尚未设置）
                 if (!userIP && data.messages.length > 0) {
                     userIP = data.messages[0].ip || '';
-                }
-                
-                const newMessages = data.messages.filter(msg => msg.sort_key > lastMessageId);
-                
-                if (newMessages.length > 0 && notificationPermission) {
-                    const nonSelfMessages = newMessages.filter(msg => msg.ip !== userIP);
-                    if (nonSelfMessages.length > 0) {
-                        const sender = nonSelfMessages[0].username;
-                        const content = nonSelfMessages[0].message ? 
-                            nonSelfMessages[0].message.substring(0, 30) + (nonSelfMessages[0].message.length > 30 ? '...' : '') : 
-                            '发送了一张图片';
-                        
-                        sendNotification('新消息', `${sender}: ${content}`);
-                    }
                 }
                 
                 renderMessages(data.messages, scrollToBottom);
             }
         })
         .catch(error => {
-            console.error('获取消息失败:', error);
+            console.error('获取数据失败:', error);
         });
     }
     
@@ -508,10 +531,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const ipInfo = document.createElement('div');
         ipInfo.className = 'ip-info';
         
-        // IP地址
+        // 判断当前用户是否是管理员（能看真实IP）
+        const currentUserIsAdmin = adminIps.includes(userIP);
+        const displayIp = currentUserIsAdmin ? msg.ip : maskIp(msg.ip);
+        
         const ipAddress = document.createElement('span');
         ipAddress.className = 'ip-address';
-        ipAddress.textContent = 'IP: ' + maskIp(msg.ip);
+        ipAddress.textContent = 'IP: ' + displayIp;
         ipInfo.appendChild(ipAddress);
         
         // 位置信息
@@ -614,12 +640,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // IP地址打码处理
     function maskIp(ip) {
-        if (!ip) return '';
-        
-        const parts = ip.split('.');
-        if (parts.length === 4) {
-            return `${parts[0]}.*.${parts[2]}.${parts[3]}`;
+        if (!ip || ip === '本地') {
+            return '';
         }
+        
+        // 使用正则表达式匹配IPv4地址
+        const ipv4_pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+        const match = ipv4_pattern.exec(ip);
+        
+        if (match) {
+            return `${match[1]}.*.${match[3]}.${match[4]}`;
+        }
+        
         return ip;
     }
     
@@ -694,9 +726,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     HighlightUI();
-    fetchMessages(true);
-    fetchHighlights();
-    setInterval(() => fetchMessages(), 5000);
-    
-    console.log('Application initialized');
+
+    fetch('/get_config')  // 先获取配置
+    .then(response => response.json())
+    .then(config => {
+        adminIps = config.admin_ips || [];
+        blockedIps = config.blocked_ips || [];
+        
+        // 然后获取用户IP
+        fetch('/get_messages')
+        .then(response => response.json())
+        .then(data => {
+            if (data.messages && Array.isArray(data.messages) && data.messages.length > 0) {
+                userIP = data.messages[0].ip || '';
+            }
+            
+            // 最后初始化消息获取
+            fetchMessages(true);
+            fetchHighlights();
+            setInterval(() => fetchMessages(), 5000);
+        });
+    })
+    .catch(error => {
+        console.error('初始化失败:', error);
+    });
 });

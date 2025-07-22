@@ -38,21 +38,13 @@ SECRET_PASSWORD = "241217"
 
 # 配置变量定义 (可轻松添加更多变量)
 CONFIG_VARS = {
-    'site_title': {
-        'default': "我的聊天网站",
-        'description': "网站标题"
+    'admin_ips': {
+        'default': ["127.0.0.1", "223.160.176.6", "27.225.45.194"],
+        'description': "管理员IP列表"
     },
-    'max_messages': {
-        'default': 100,
-        'description': "最大消息数"
-    },
-    'welcome_message': {
-        'default': "欢迎来到聊天室！",
-        'description': "欢迎消息"
-    },
-    'admin_contact': {
-        'default': "admin@example.com",
-        'description': "管理员联系方式"
+    'blocked_ips': {
+        'default': [],
+        'description': "限制发言IP列表"
     }
 }
 
@@ -138,6 +130,13 @@ def save_highlights():
     with open(HIGHLIGHTS_FILE, 'w', encoding='utf-8') as f:
         json.dump(highlights, f, ensure_ascii=False, indent=2)
 
+@app.route('/get_config')
+def get_config():
+    return jsonify({
+        'admin_ips': config_values.get('admin_ips', []),
+        'blocked_ips': config_values.get('blocked_ips', [])
+    })
+
 def get_client_ip():
     """获取客户端真实IP（兼容代理服务器）"""
     if request.headers.getlist("X-Forwarded-For"):
@@ -220,6 +219,12 @@ def send_message():
         username = request.form.get('username', '匿名').strip() or '匿名'
         message = request.form.get('message', '').strip()
         user_ip = get_client_ip()
+
+         # 检查是否在限制发言名单中
+        blocked_ips = config_values.get('blocked_ips', [])
+        if user_ip in blocked_ips:
+            return jsonify({'status': 'error', 'message': '您的IP已被限制发言'}), 403
+        
         
         # 获取当前时间
         timestamp = datetime.now().strftime("%H:%M:%S")
