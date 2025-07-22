@@ -129,5 +129,29 @@
     <script src="/static/js/marked.min.js"></script>
     <script src="/static/js/purify.min.js"></script>
     <script src="/static/js/script.js"></script>
+    <script>
+        // 发送消息后保存用户名到cookie
+        function saveUsernameToCookie() {
+            const usernameInput = document.querySelector('#username');
+            if (usernameInput) {
+                const username = usernameInput.value.trim();
+                // 如果用户名不为空且不是匿名，则保存到cookie
+                if (username && username !== '匿名') {
+                    // 保存用户名到cookie，有效期30天
+                    document.cookie = `username=${encodeURIComponent(username)}; max-age=${60*60*24*30}; path=/`;
+                }
+            }
+        }
+
+        // 在发送消息按钮的事件监听中调用保存用户名函数
+        document.addEventListener('DOMContentLoaded', function() {
+            const sendBtn = document.querySelector('#sendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function() {
+                    saveUsernameToCookie();
+                });
+            }
+        });
+    </script>
 </body>
 </html>

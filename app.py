@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, make_response
 import base64
 import time,json,re,os
 from datetime import datetime
@@ -163,7 +163,18 @@ def save_chat_history():
 @app.route('/')
 def index():
     """主页面"""
-    return render_template('index.html')
+    # 获取用户名cookie（如果存在）
+    username = request.cookies.get('username', '')
+    # 如果是匿名或不存在，则默认为空
+    if username == '匿名':
+        username = ''
+    
+    resp = make_response(render_template('index.html'))
+    
+    # 如果用户已经设置过用户名，则保留原来的cookie
+    if username:
+        resp.set_cookie('username', username, max_age=60*60*24*30)  # 保存30天
+    return resp
 
 @app.route('/manage')
 def manage_html():
