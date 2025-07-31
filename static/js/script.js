@@ -507,6 +507,32 @@ document.addEventListener('DOMContentLoaded', function() {
             scrollToBottomSmooth();
         }
     }
+
+    // 引用消息
+function quoteMessage(msg) {
+    const messageInput = document.querySelector('#message');
+    if (!messageInput) return;
+    
+    // 获取原始消息文本（去除HTML标签）
+    let messageText = msg.message || '';
+    
+    // 如果有HTML内容，需要提取纯文本
+    if (messageText && (messageText.includes('<') || messageText.includes('>'))) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = messageText;
+        messageText = tempDiv.textContent || tempDiv.innerText || '';
+    }
+    
+    // 创建引用格式
+    const quotedText = `> ${messageText}\n> —— ${msg.username}\n\n`;
+    
+    // 将引用添加到消息输入框的开头
+    messageInput.value = quotedText + messageInput.value;
+    
+    // 聚焦到输入框并滚动到顶部
+    messageInput.focus();
+    // messageInput.scrollTop = 0;
+}
     
     // 创建消息元素
     function createMessageElement(msg) {
@@ -573,6 +599,14 @@ document.addEventListener('DOMContentLoaded', function() {
         timestampSpan.className = 'timestamp';
         timestampSpan.textContent = `${hours}:${minutes}:${seconds}`;
         timestampArea.appendChild(timestampSpan);
+
+        // 引用按钮
+        const quoteBtn = document.createElement('button');
+        quoteBtn.className = 'quote-btn';
+        quoteBtn.title = '引用消息';
+        quoteBtn.innerHTML = '❞';
+        quoteBtn.addEventListener('click', () => quoteMessage(msg));
+        div.appendChild(quoteBtn);
         
         messageHeader.appendChild(timestampArea);
         div.appendChild(messageHeader);
