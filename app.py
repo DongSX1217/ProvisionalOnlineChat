@@ -161,7 +161,11 @@ def save_chat_history():
         json.dump(chat_history, f, ensure_ascii=False, indent=2)
 
 @app.route('/')
-def index():
+def home():
+    return render_template('home.html')
+
+@app.route('/chat')
+def chat_html():
     """主页面"""
     # 获取用户名cookie（如果存在）
     username = request.cookies.get('username', '')
@@ -169,7 +173,7 @@ def index():
     if username == '匿名':
         username = ''
     
-    resp = make_response(render_template('index.html'))
+    resp = make_response(render_template('chat.html'))
     
     # 如果用户已经设置过用户名，则保留原来的cookie
     if username:
