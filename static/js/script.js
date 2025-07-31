@@ -180,10 +180,19 @@ document.addEventListener('DOMContentLoaded', function() {
             highlightsBtn.addEventListener('click', showHighlights);
         }
         
-        // 弹窗关闭按钮事件 (新增)
+        // 精华消息弹窗关闭按钮事件
         const closeHighlightsBtn = document.getElementById('closeHighlights');
         if (closeHighlightsBtn) {
             closeHighlightsBtn.addEventListener('click', hideHighlights);
+        }
+
+        // Markdown源码弹窗关闭按钮事件
+        const closeSourceBtn = document.querySelector('.source-modal .close-btn');
+        if (closeSourceBtn) {
+            closeSourceBtn.addEventListener('click', function() {
+                document.querySelector('.source-modal').style.display = 'none';
+                if (overlay) overlay.style.display = 'none';
+            });
         }
 
         // 表情按钮事件
@@ -533,6 +542,44 @@ function quoteMessage(msg) {
     messageInput.focus();
     // messageInput.scrollTop = 0;
 }
+    // 引用消息
+    function quoteMessage(msg) {
+        const messageInput = document.querySelector('#message');
+        if (!messageInput) return;
+        
+        // 获取原始消息文本（去除HTML标签）
+        let messageText = msg.message || '';
+        
+        // 如果有HTML内容，需要提取纯文本
+        if (messageText && (messageText.includes('<') || messageText.includes('>'))) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = messageText;
+            messageText = tempDiv.textContent || tempDiv.innerText || '';
+        }
+        
+        // 创建引用格式
+        const quotedText = `> ${messageText}\n> —— ${msg.username}\n\n`;
+        
+        // 将引用添加到消息输入框的开头
+        messageInput.value = quotedText + messageInput.value;
+        
+        // 聚焦到输入框并滚动到顶部
+        messageInput.focus();
+        // messageInput.scrollTop = 0;
+    }
+
+    // 显示消息的Markdown源代码
+    function showSourceCode(msg) {
+        const sourceModal = document.querySelector('.source-modal');
+        const overlay = document.querySelector('#overlay');
+        const sourceContent = sourceModal.querySelector('.source-content');
+        
+        if (msg.message) {
+            sourceContent.textContent = msg.message;
+            sourceModal.style.display = 'block';
+            overlay.style.display = 'block';
+        }
+    }
     
     // 创建消息元素
     function createMessageElement(msg) {
@@ -607,6 +654,16 @@ function quoteMessage(msg) {
         quoteBtn.innerHTML = '❞';
         quoteBtn.addEventListener('click', () => quoteMessage(msg));
         div.appendChild(quoteBtn);
+
+        // 源码查看按钮（如果消息有内容）
+        if (msg.message) {
+            const sourceBtn = document.createElement('button');
+            sourceBtn.className = 'source-btn';
+            sourceBtn.title = '查看源码';
+            sourceBtn.innerHTML = '{}';
+            sourceBtn.addEventListener('click', () => showSourceCode(msg));
+            div.appendChild(sourceBtn);
+        }
         
         messageHeader.appendChild(timestampArea);
         div.appendChild(messageHeader);
