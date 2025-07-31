@@ -105,6 +105,13 @@ header p {
     min-width: 70px;
 }
 
+/* 横屏时添加左移50px的样式 */
+@media (orientation: landscape) and (min-width: 1024px) {
+    .timestamp-area {
+        transform: translateX(-50px);
+    }
+}
+
 .date {
     font-size: 0.8rem;
     color: #999;
@@ -361,30 +368,6 @@ button {
     width: 100%;
 }
 
-.delete-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(255, 94, 98, 0.1);
-    color: #ff5e62;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: none;
-    padding: 0;
-}
-
-.delete-btn:hover {
-    background: rgba(255, 94, 98, 0.2);
-    transform: scale(1.1);
-}
-
 .notification-btn {
     position: absolute;
     top: 15px;
@@ -496,11 +479,44 @@ button {
 }
 
 /* 设置精华消息按钮样式 */
-.highlight-btn {
+.highlight-btn,
+.delete-btn {
     position: absolute;
-    top: 1px;
-    right: 120px; 
-    z-index: 20;
+    top: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+}
+
+.delete-btn {
+    right: 8px;
+    background: rgba(255, 94, 98, 0.1);
+    color: #ff5e62;
+}
+
+.delete-btn:hover {
+    background: rgba(255, 94, 98, 0.2);
+    transform: scale(1.1);
+}
+
+.highlight-btn {
+    right: 35px; /* 留出删除按钮的空间 */
+    background: rgba(255, 215, 0, 0.1); /* 金色背景 */
+    color: #ffd700; /* 金色文字 */
+}
+
+.highlight-btn:hover {
+    background: rgba(255, 215, 0, 0.2);
+    transform: scale(1.1);
 }
 
 /* 精华消息按钮样式 */
@@ -592,10 +608,6 @@ button {
         margin-bottom: 4px;
     }
     
-    .timestamp-area {
-        margin-top: 4px; 
-    }
-    
     .input-area {
         padding: 12px;
     }
@@ -630,14 +642,6 @@ button {
     
     .message-input textarea {
         height: 80px;
-    }
-    
-    .delete-btn {
-        top: 8px;
-        right: 8px;
-        width: 22px;
-        height: 22px;
-        font-size: 0.7rem;
     }
     
     .ip-info {
@@ -687,11 +691,19 @@ button {
         transform: translateY(-1px); /* 减小悬停位移 */
     }
 
-    /* 精华消息按钮样式 */
+    highlight-btn,
+    .delete-btn {
+        top: 8px;
+        width: 22px;
+        height: 22px;
+        font-size: 0.7rem;
+    }
+    
     .highlight-btn {
-        position: absolute;
-        top: 1px;
-        right: 30px; 
-        z-index: 20;
+        right: 30px;
+    }
+    
+    .delete-btn {
+        right: 8px;
     }
 }
