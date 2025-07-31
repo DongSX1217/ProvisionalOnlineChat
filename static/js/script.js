@@ -518,31 +518,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 引用消息
-function quoteMessage(msg) {
-    const messageInput = document.querySelector('#message');
-    if (!messageInput) return;
-    
-    // 获取原始消息文本（去除HTML标签）
-    let messageText = msg.message || '';
-    
-    // 如果有HTML内容，需要提取纯文本
-    if (messageText && (messageText.includes('<') || messageText.includes('>'))) {
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = messageText;
-        messageText = tempDiv.textContent || tempDiv.innerText || '';
-    }
-    
-    // 创建引用格式
-    const quotedText = `> ${messageText}\n> —— ${msg.username}\n\n`;
-    
-    // 将引用添加到消息输入框的开头
-    messageInput.value = quotedText + messageInput.value;
-    
-    // 聚焦到输入框并滚动到顶部
-    messageInput.focus();
-    // messageInput.scrollTop = 0;
-}
-    // 引用消息
     function quoteMessage(msg) {
         const messageInput = document.querySelector('#message');
         if (!messageInput) return;
@@ -557,8 +532,15 @@ function quoteMessage(msg) {
             messageText = tempDiv.textContent || tempDiv.innerText || '';
         }
         
+        // 处理嵌套引用，确保每一行都添加">"符号
+        const lines = messageText.split('\n');
+        const processedLines = lines.map(line => {
+            return '> ' + line;
+        });
+        messageText = processedLines.join('\n');
+        
         // 创建引用格式
-        const quotedText = `> ${messageText}\n> —— ${msg.username}\n\n`;
+        const quotedText = `${messageText}\n> —— ${msg.username}\n\n`;
         
         // 将引用添加到消息输入框的开头
         messageInput.value = quotedText + messageInput.value;
