@@ -35,8 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const highlightsBtn = document.createElement('button'); // 精华消息按钮
 
     // 获取用户名cookie
-    const usernameCookie = document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, "$1");
-    
+    const usernameCookie = decodeURIComponent(document.cookie.replace(/(?:(?:^|.*;\s*)username\s*=\s*([^;]*).*$)|^.*$/, "$1"));
+
     // 如果有保存的用户名且不是匿名，则填充到输入框
     if (usernameCookie && usernameCookie !== '匿名') {
         if (usernameInput) {
