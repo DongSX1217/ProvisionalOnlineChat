@@ -50,7 +50,7 @@ CONFIG_VARS = {
         'description': "限制发言IP列表",
         'type': 'array'
     },
-    'note_top':{
+    'info_bar_content':{
         'default': "注意：仅保留最近100条消息 • 图片限制2MB以内 • 测试中<br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服",
         'description': "聊天页面顶端提示文字",
         'type': 'string'
