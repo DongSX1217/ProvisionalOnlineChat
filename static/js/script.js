@@ -363,7 +363,57 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
+    // 显示加载指示器
+    function showLoadingIndicator() {
+        if (!chatContainer) return;
+        
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loadingIndicator';
+        loadingDiv.textContent = '正在加载中...';
+        loadingDiv.style.textAlign = 'center';
+        loadingDiv.style.padding = '20px';
+        loadingDiv.style.color = '#666';
+        chatContainer.insertBefore(loadingDiv, scrollAnchor);
+    }
+
+    // 延迟加载图片
+    function loadImages() {
+        const imagePlaceholders = document.querySelectorAll('.image-placeholder');
+        imagePlaceholders.forEach(placeholder => {
+            const messageId = placeholder.getAttribute('data-message-id');
+            const imageUrl = placeholder.getAttribute('data-image-url');
+            
+            if (imageUrl) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = '图片';
+                img.className = 'message-image';
+                img.style.display = 'none'; // 先隐藏，加载完成后再显示
+                
+                img.onload = function() {
+                    // 图片加载完成后替换占位符
+                    placeholder.parentNode.replaceChild(img, placeholder);
+                    img.style.display = 'block';
+                };
+                
+                img.onerror = function() {
+                    // 图片加载失败，显示错误信息
+                    placeholder.innerHTML = '图片加载失败';
+                    placeholder.style.backgroundColor = '#fcc';
+                };
+            }
+        });
+    }
+
+    // 隐藏加载指示器
+    function hideLoadingIndicator() {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if (loadingIndicator) {
+            loadingIndicator.remove();
+        }
+    }
+
     // 显示Markdown帮助
     function showMarkdownHelp() {
         if (markdownHelp) markdownHelp.style.display = 'block';
@@ -492,6 +542,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderMessages(messages, scrollToBottom = false) {
         if (!chatContainer || !scrollAnchor) return;
         
+        // 如果是第一次加载且没有消息，显示加载提示
+        if (lastMessageId === 0 && messages.length === 0) {
+            showLoadingIndicator();
+            return;
+        }
+        
+        // 隐藏加载提示
+        hideLoadingIndicator();
+        
         const newMessages = messages.filter(msg => msg.sort_key > lastMessageId);
         
         if (newMessages.length === 0) {
@@ -500,9 +559,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         lastMessageId = Math.max(...messages.map(msg => msg.sort_key));
         
+        // 先渲染文字消息
         newMessages.forEach(msg => {
-            const messageElement = createMessageElement(msg);
-            scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
+            if (!msg.image) {  // 优先渲染非图片消息
+                const messageElement = createMessageElement(msg);
+                scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
+            }
+        });
+        
+        // 再渲染图片消息（只渲染图片占位符）
+        newMessages.forEach(msg => {
+            if (msg.image) {
+                const messageElement = createMessageElement(msg, true); // true表示只渲染占位符
+                scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
+            }
         });
         
         const allMessages = chatContainer.querySelectorAll('.message');
@@ -515,6 +585,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (scrollToBottom) {
             scrollToBottomSmooth();
         }
+        
+        // 延迟加载图片
+        setTimeout(loadImages, 100);
     }
 
     // 引用消息
@@ -564,7 +637,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 创建消息元素
-    function createMessageElement(msg) {
+    // 创建消息元素
+    function createMessageElement(msg, imagePlaceholder = false) {
         const div = document.createElement('div');
         div.className = 'message';
         div.setAttribute('data-id', msg.sort_key);
@@ -662,12 +736,31 @@ document.addEventListener('DOMContentLoaded', function() {
             div.appendChild(contentDiv);
         }
         
+        // 处理图片显示
         if (msg.image) {
-            const img = document.createElement('img');
-            img.src = msg.image;
-            img.alt = '图片';
-            img.className = 'message-image';
-            div.appendChild(img);
+            if (imagePlaceholder) {
+                // 创建图片占位符
+                const placeholder = document.createElement('div');
+                placeholder.className = 'image-placeholder';
+                placeholder.setAttribute('data-message-id', msg.sort_key);
+                placeholder.setAttribute('data-image-url', msg.image_url || '');
+                placeholder.style.backgroundColor = '#eee';
+                placeholder.style.padding = '20px';
+                placeholder.style.textAlign = 'center';
+                placeholder.style.borderRadius = '8px';
+                placeholder.style.marginTop = '8px';
+                placeholder.style.color = '#999';
+                placeholder.style.fontSize = '14px';
+                placeholder.textContent = '正在加载中...';
+                div.appendChild(placeholder);
+            } else if (msg.image_url) {
+                // 直接显示图片
+                const img = document.createElement('img');
+                img.src = msg.image_url;
+                img.alt = '图片';
+                img.className = 'message-image';
+                div.appendChild(img);
+            }
         }
         
         //if (msg.ip === userIP || userIP === '127.0.0.1') {
@@ -684,7 +777,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             msg.is_highlighted : 
                             highlights.some(h => h.sort_key == msg.sort_key);
         addHighlightButton(div, {...msg, is_highlighted: isHighlighted});
-    
 
         return div;
     }

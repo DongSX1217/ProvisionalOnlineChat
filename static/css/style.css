@@ -105,6 +105,22 @@ header p {
     min-width: 70px;
 }
 
+.image-placeholder {
+    background-color: #eee;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+    margin-top: 8px;
+    color: #999;
+    font-size: 14px;
+}
+
+#loadingIndicator {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
 /* 横屏时添加左移50px的样式 */
 @media (orientation: landscape) and (min-width: 1024px) {
     .timestamp-area {

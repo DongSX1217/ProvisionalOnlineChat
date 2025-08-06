@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, jsonify, make_response
+from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, abort
 import base64
 import time,json,re,os
+import uuid
 from datetime import datetime
 import threading
 import requests,smtplib
@@ -16,6 +17,7 @@ history_lock = threading.Lock()
 HIGHLIGHTS_FILE = './data/highlights.json'
 CHAT_HISTORY_FILE = './data/chat_history.json'
 TEST_VARS_FILE = './data/test_variables.json'
+IMAGE_STORAGE_PATH = './data/images/'
 
 # 创建数据目录
 Path('./data').mkdir(exist_ok=True)
@@ -257,7 +259,7 @@ def send_message():
         timestamp_sort = datetime.now().timestamp()  # 用于排序的时间戳
         
         # 处理图片上传
-        image = None
+        image_filename = None
         if 'image' in request.files:
             file = request.files['image']
             if file and allowed_file(file.filename):
@@ -269,12 +271,14 @@ def send_message():
                 if file_length > 2 * 1024 * 1024:  # 限制2MB
                     return jsonify({'status': 'error', 'message': '图片大小不能超过2MB'}), 400
                 
-                # 将图片转为base64编码
-                image_data = file.read()
-                image = f"data:image/{file.filename.split('.')[-1]};base64,{base64.b64encode(image_data).decode('utf-8')}"
+                # 保存图片到服务器本地
+                file_extension = file.filename.rsplit('.', 1)[1].lower()
+                image_filename = f"{uuid.uuid4().hex}.{file_extension}"
+                file_path = os.path.join(IMAGE_STORAGE_PATH, image_filename)
+                file.save(file_path)
         
         # 如果既没有消息也没有图片，则返回错误
-        if not message and not image:
+        if not message and not image_filename:
             return jsonify({'status': 'error', 'message': '消息内容不能为空'}), 400
         
         # 获取IP地理位置
@@ -285,7 +289,7 @@ def send_message():
             'username': username,
             'ip': user_ip,
             'message': message,
-            'image': image,
+            'image': image_filename,  # 只保存文件名，不保存base64数据
             'timestamp': timestamp,
             'sort_key': timestamp_sort,
             'location': location  # 地理位置信息
@@ -296,7 +300,16 @@ def send_message():
             chat_history.append(message_obj)
             # 保持只保留最近的100条消息
             if len(chat_history) > 100:
-                chat_history.pop(0)
+                # 删除超出100条的最早消息中的图片文件
+                removed_message = chat_history.pop(0)
+                if removed_message.get('image'):
+                    image_path = os.path.join(IMAGE_STORAGE_PATH, removed_message['image'])
+                    if os.path.exists(image_path):
+                        try:
+                            os.remove(image_path)
+                        except Exception as e:
+                            app.logger.error(f"删除图片文件失败: {str(e)}")
+            
             save_chat_history()  # 新增保存操作
         
         return jsonify({'status': 'success'})
@@ -304,6 +317,15 @@ def send_message():
     except Exception as e:
         app.logger.error(f"发送消息时出错: {str(e)}")
         return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
+
+@app.route('/image/<filename>')
+def serve_image(filename):
+    """提供图片文件服务"""
+    try:
+        return send_from_directory(IMAGE_STORAGE_PATH, filename)
+    except Exception as e:
+        app.logger.error(f"提供图片文件时出错: {str(e)}")
+        return abort(404)
 
 @app.route('/get_messages')
 def get_messages():
@@ -313,6 +335,10 @@ def get_messages():
         with history_lock:
             # 按时间戳排序（从小到大，最新的在最后）
             sorted_history = sorted(chat_history, key=lambda x: x['sort_key'])
+            # 为图片消息添加图片URL
+            for msg in sorted_history:
+                if msg.get('image'):
+                    msg['image_url'] = f"/image/{msg['image']}"
             return jsonify({'messages': sorted_history})
     except Exception as e:
         app.logger.error(f"获取消息时出错: {str(e)}")
@@ -400,6 +426,7 @@ def get_highlights():
 
 if __name__ == '__main__':
     Path('./data').mkdir(exist_ok=True) # 确保数据目录存在
+    Path(IMAGE_STORAGE_PATH).mkdir(exist_ok=True)  # 创建图片存储目录
     chat_history = load_chat_history() # 初始化时加载聊天记录 
     load_config_vars() 
     app.logger.info(f"初始配置: {config_values}") # 初始化时打印配置
