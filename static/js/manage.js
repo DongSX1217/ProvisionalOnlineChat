@@ -51,6 +51,7 @@ $(document).ready(function() {
         // 遍历所有配置变量
         for (const [name, value] of Object.entries(data.config_vars)) {
             const description = data.var_descriptions?.[name] || name;
+            const type = data.var_types?.[name] || 'string';
             const displayValue = Array.isArray(value) ? JSON.stringify(value) : value;
             
             // 显示当前值
@@ -58,11 +59,18 @@ $(document).ready(function() {
                 `<p><strong>${description}:</strong> <span class="value-${name}">${displayValue}</span></p>`
             );
             
-            // 添加编辑表单
+            // 添加编辑表单，根据类型提供不同的输入方式
+            let inputElement = '';
+            if (type === 'array') {
+                inputElement = `<input type="text" value='${displayValue.replace(/'/g, "\\'")}' placeholder="格式: [\\\"IP1\\\",\\\"IP2\\\"] 或 IP1,IP2">`;
+            } else {
+                inputElement = `<input type="text" value='${displayValue.replace(/'/g, "\\'")}'>`;
+            }
+            
             editContainer.append(`
-                <div class="form-group edit-form-group" data-name="${name}">
+                <div class="form-group edit-form-group" data-name="${name}" data-type="${type}">
                     <label>${description}:</label>
-                    <input type="text" value='${displayValue.replace(/'/g, "\\'")}' ${name.includes('ips') ? 'placeholder="格式: [\\\\\\"IP1\\\\\\",\\\\\\"IP2\\\\\\"] 或 IP1,IP2"' : ''}>
+                    ${inputElement}
                 </div>
             `);
         }
@@ -82,16 +90,17 @@ $(document).ready(function() {
             const formData = {};
             $('.edit-form-group').each(function() {
                 const name = $(this).data('name');
+                const type = $(this).data('type');
                 let value = $(this).find('input').val().trim();
                 
-                // 特殊处理IP列表
-                if (name === 'admin_ips' || name === 'blocked_ips') {
+                // 根据类型处理值
+                if (type === 'array') {
                     try {
                         // 尝试解析JSON
                         value = JSON.parse(value);
                     } catch(e) {
                         // 如果JSON解析失败，按逗号分割
-                        value = value.split(',').map(ip => ip.trim()).filter(ip => ip);
+                        value = value.split(',').map(item => item.trim()).filter(item => item);
                     }
                 }
                 

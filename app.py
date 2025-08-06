@@ -16,7 +16,7 @@ history_lock = threading.Lock()
 # 存储路径定义
 HIGHLIGHTS_FILE = './data/highlights.json'
 CHAT_HISTORY_FILE = './data/chat_history.json'
-TEST_VARS_FILE = './data/test_variables.json'
+VARS_FILE = './data/variables.json'
 IMAGE_STORAGE_PATH = './data/images/'
 
 # 创建数据目录
@@ -42,11 +42,18 @@ SECRET_PASSWORD = "241217"
 CONFIG_VARS = {
     'admin_ips': {
         'default': ["127.0.0.1", "223.160.176.6", "27.225.45.194"],
-        'description': "管理员IP列表"
+        'description': "管理员IP列表",
+        'type': 'array'
     },
     'blocked_ips': {
         'default': [],
-        'description': "限制发言IP列表"
+        'description': "限制发言IP列表",
+        'type': 'array'
+    },
+    'note_top':{
+        'default': "注意：仅保留最近100条消息 • 图片限制2MB以内 • 测试中<br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服",
+        'description': "聊天页面顶端提示文字",
+        'type': 'string'
     }
 }
 
@@ -56,9 +63,9 @@ config_values = {}
 def load_config_vars():
     """从文件加载配置变量"""
     global config_values
-    if os.path.exists(TEST_VARS_FILE):
+    if os.path.exists(VARS_FILE):
         try:
-            with open(TEST_VARS_FILE, 'r', encoding='utf-8') as f:
+            with open(VARS_FILE, 'r', encoding='utf-8') as f:
                 saved_vars = json.load(f)
                 # 合并保存的变量和默认配置
                 config_values = {
@@ -74,7 +81,7 @@ def load_config_vars():
 def save_config_vars():
     """保存配置变量到文件"""
     try:
-        with open(TEST_VARS_FILE, 'w', encoding='utf-8') as f:
+        with open(VARS_FILE, 'w', encoding='utf-8') as f:
             json.dump(config_values, f, ensure_ascii=False, indent=2)
     except Exception as e:
         app.logger.error(f"保存配置变量失败: {str(e)}")
@@ -175,7 +182,11 @@ def chat_html():
     if username == '匿名':
         username = ''
     
-    resp = make_response(render_template('chat.html'))
+    # 从配置中获取聊天室标题和信息栏内容
+    chat_title = config_values.get('chat_title', '简易临时在线聊天室')
+    info_bar_content = config_values.get('info_bar_content', '注意：仅保留最近100条消息 • 图片限制2MB以内 • 测试中<br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服务器')
+    
+    resp = make_response(render_template('chat.html', chat_title=chat_title, info_bar_content=info_bar_content))
     
     # 如果用户已经设置过用户名，则保留原来的cookie
     if username:
@@ -193,11 +204,12 @@ def check_password():
     try:
         password = request.form.get('password', '').strip()
         if password == SECRET_PASSWORD:
-            # 返回所有配置变量及其描述
+            # 返回所有配置变量及其描述和类型
             return jsonify({
                 'status': 'success',
                 'config_vars': config_values,
-                'var_descriptions': {name: data['description'] for name, data in CONFIG_VARS.items()}
+                'var_descriptions': {name: data['description'] for name, data in CONFIG_VARS.items()},
+                'var_types': {name: data.get('type', 'string') for name, data in CONFIG_VARS.items()}
             })
         else:
             return jsonify({'status': 'error', 'message': '密码错误，请重试！'})
@@ -216,14 +228,18 @@ def update_variables():
         # 更新所有接收到的变量
         for name, value in data.items():
             if name in CONFIG_VARS:
-                # 特殊处理数组类型
-                if isinstance(value, str) and name in ['admin_ips', 'blocked_ips']:
-                    try:
-                        config_values[name] = json.loads(value)
-                    except json.JSONDecodeError:
-                        config_values[name] = [ip.strip() for ip in value.split(',') if ip.strip()]
-                elif isinstance(value, list):
-                    config_values[name] = value
+                var_type = CONFIG_VARS[name].get('type', 'string')
+                # 根据变量类型处理值
+                if var_type == 'array':
+                    if isinstance(value, str):
+                        try:
+                            config_values[name] = json.loads(value)
+                        except json.JSONDecodeError:
+                            config_values[name] = [item.strip() for item in value.split(',') if item.strip()]
+                    elif isinstance(value, list):
+                        config_values[name] = value
+                    else:
+                        config_values[name] = [value] if value else []
                 else:
                     config_values[name] = value
         
@@ -233,7 +249,9 @@ def update_variables():
         # 返回更新后的值
         return jsonify({
             'status': 'success',
-            'config_vars': config_values
+            'config_vars': config_values,
+            'var_descriptions': {name: data['description'] for name, data in CONFIG_VARS.items()},
+            'var_types': {name: data.get('type', 'string') for name, data in CONFIG_VARS.items()}
         })
     except Exception as e:
         app.logger.error(f"更新变量时出错: {str(e)}", exc_info=True)
