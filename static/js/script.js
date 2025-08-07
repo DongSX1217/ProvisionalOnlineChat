@@ -559,17 +559,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // 隐藏加载提示
         hideLoadingIndicator();
         
+        // 获取所有新消息（基于lastMessageId）
         const newMessages = messages.filter(msg => msg.sort_key > lastMessageId);
         
         if (newMessages.length === 0) {
             return;
         }
         
+        // 更新lastMessageId为最新消息的时间戳
         lastMessageId = Math.max(...messages.map(msg => msg.sort_key));
         
-        // 按时间顺序渲染所有新消息（文字和图片混合排序）
-        newMessages.sort((a, b) => a.sort_key - b.sort_key); // 确保按时间排序
+        // 按时间戳排序所有新消息
+        newMessages.sort((a, b) => a.sort_key - b.sort_key);
         
+        // 渲染所有新消息（按时间顺序）
         newMessages.forEach(msg => {
             const messageElement = createMessageElement(msg, !!msg.image); // 对于图片消息，先创建占位符
             scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
