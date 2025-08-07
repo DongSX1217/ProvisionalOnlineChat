@@ -388,6 +388,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // 延迟加载图片
     function loadImages() {
         const imagePlaceholders = document.querySelectorAll('.image-placeholder');
+        let loadedCount = 0;
+        const totalCount = imagePlaceholders.length;
+        
+        // 判断是否是初次加载（页面刚打开时）
+        const isFirstLoad = lastMessageId === 0;
+        
+        if (totalCount === 0) {
+            return;
+        }
+        
         imagePlaceholders.forEach(placeholder => {
             const messageId = placeholder.getAttribute('data-message-id');
             const imageUrl = placeholder.getAttribute('data-image-url');
@@ -403,12 +413,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 图片加载完成后替换占位符
                     placeholder.parentNode.replaceChild(img, placeholder);
                     img.style.display = 'block';
+                    
+                    // 图片加载完成后，如果是初次加载，再次滚动到底部
+                    loadedCount++;
+                    if (isFirstLoad && loadedCount === totalCount) {
+                        // 所有图片加载完成后，延迟一点时间再滚动到底部
+                        setTimeout(() => {
+                            scrollToBottomSmooth();
+                        }, 100);
+                    }
                 };
                 
                 img.onerror = function() {
                     // 图片加载失败，显示错误信息
                     placeholder.innerHTML = '图片加载失败';
                     placeholder.style.backgroundColor = '#fcc';
+                    
+                    // 图片加载失败时也检查是否需要滚动到底部
+                    loadedCount++;
+                    if (isFirstLoad && loadedCount === totalCount) {
+                        setTimeout(() => {
+                            scrollToBottomSmooth();
+                        }, 100);
+                    }
                 };
             }
         });

@@ -36,7 +36,7 @@ ip_location_lock = threading.Lock()
 admin = ['127.0.0.1','223.160.176.6','27.225.45.194']
 
 # 密码配置
-SECRET_PASSWORD = "241217"
+SECRET_PASSWORD = "1919810"
 
 # 配置变量定义 (可轻松添加更多变量)
 CONFIG_VARS = {
