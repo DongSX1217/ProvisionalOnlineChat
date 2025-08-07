@@ -567,20 +567,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         lastMessageId = Math.max(...messages.map(msg => msg.sort_key));
         
-        // 先渲染文字消息
-        newMessages.forEach(msg => {
-            if (!msg.image) {  // 优先渲染非图片消息
-                const messageElement = createMessageElement(msg);
-                scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
-            }
-        });
+        // 按时间顺序渲染所有新消息（文字和图片混合排序）
+        newMessages.sort((a, b) => a.sort_key - b.sort_key); // 确保按时间排序
         
-        // 再渲染图片消息（只渲染图片占位符）
         newMessages.forEach(msg => {
-            if (msg.image) {
-                const messageElement = createMessageElement(msg, true); // true表示只渲染占位符
-                scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
-            }
+            const messageElement = createMessageElement(msg, !!msg.image); // 对于图片消息，先创建占位符
+            scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
         });
         
         const allMessages = chatContainer.querySelectorAll('.message');
