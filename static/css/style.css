@@ -421,17 +421,17 @@ button {
 }
 
 .home-btn {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: none;
-    border-radius: 20px;
-    padding: 5px 10px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.3s;
+    position: absolute; /* 定位方式 */
+    top: 15px; /* 上间距 */
+    left: 15px; /* 左间距 */
+    background: rgba(255, 255, 255, 0.2); /* 背景颜色 */
+    color: white; /* 文字颜色 */
+    border: none; /* 边框 */
+    border-radius: 20px; /* 圆角 */
+    padding: 5px 10px; /* 内间距 */
+    font-size: 0.8rem; /* 文字大小 */
+    cursor: pointer; /* 鼠标样式 */
+    transition: all 0.3s; /* 过渡效果 */
 }
 
 .home-btn:hover {
@@ -785,17 +785,17 @@ button {
     .markdown-help-btn,
     .highlights-btn,
     .notification-btn {
-        position: static;
-        top: auto;
-        right: auto;
-        left: auto;
-        transform: none;
-        margin: 0;
-        padding: 5px 10px; /* 稍微增加按钮内边距 */
-        font-size: 0.78rem; /* 稍微增大字体 */
-        min-width: 80px; /* 设置最小宽度 */
+        position: static; /* 恢复默认位置 */
+        top: auto; /* 取消按钮位置 */
+        right: auto; /* 恢复默认位置 */
+        left: auto; /* 恢复默认位置 */
+        transform: none; /* 恢复默认位置 */
+        margin: -4px ; /* 取消按钮外边距 */
+        padding: 4px 8px; /* 稍微增加按钮内边距 */
+        font-size: 0.8rem; /* 稍微增大字体 */
+        min-width: 30px; /* 设置最小宽度 */
         flex: none; /* 取消flex增长 */
-        order: 1;
+        order: 1; /* 默认按钮排第一个 */
     }
 
     .markdown-help-btn {
