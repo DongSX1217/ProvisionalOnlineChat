@@ -92,6 +92,9 @@ def get_ip_location(ip):
     if ip == '127.0.0.1':
         return "本地"
     
+    if ip == '124.23.134.28':
+        return "陕西的abandon"
+    
     # 检查缓存中是否有该IP的地理位置
     with ip_location_lock:
         if ip in ip_location_cache:
