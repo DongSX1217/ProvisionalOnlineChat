@@ -195,6 +195,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        // 主页按钮事件处理
+        const homeBtn = document.querySelector('#homeBtn');
+        if (homeBtn) {
+            homeBtn.addEventListener('click', function() {
+                window.location.href = '/';
+            });
+        }
+
         // 表情按钮事件
         if (emojiBtn && emojiContainer) {
             emojiBtn.addEventListener('click', toggleEmojiContainer);

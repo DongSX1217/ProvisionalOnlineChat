@@ -405,7 +405,7 @@ button {
 .markdown-help-btn {
     position: absolute;
     top: 15px;
-    left: 15px;
+    left: 75px;
     background: rgba(255, 255, 255, 0.2);
     color: white;
     border: none;
@@ -417,6 +417,24 @@ button {
 }
 
 .markdown-help-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.home-btn {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.home-btn:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
@@ -734,17 +752,36 @@ button {
         gap: 2px;
     }
     
-     /* 按钮容器样式 */
+    /* 统一顶部按钮样式 */
     .header-buttons {
         display: flex;
         justify-content: center;
-        gap: 12px; /* 增加按钮间距 */
+        gap: 12px;
         width: 100%;
-        margin-top: 8px; /* 增加标题与按钮的间距 */
-        padding: 0 10px; /* 添加左右内边距 */
+        margin-top: 8px;
+        padding: 0 10px;
+    }
+
+    .header-buttons button {
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 5px 10px;
+        font-size: 0.78rem;
+        min-width: 80px;
+        flex: none;
+    }
+
+    .header-buttons button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
     }
     
     /* 统一按钮样式 */
+    .home-btn,
     .markdown-help-btn,
     .highlights-btn,
     .notification-btn {
@@ -760,16 +797,21 @@ button {
         flex: none; /* 取消flex增长 */
         order: 1;
     }
+
+    .markdown-help-btn {
+        order: 2; /* 帮助按钮排第二个 */
+    }
     
     .highlights-btn {
-        order: 2; /* 精华消息按钮排第二个 */
+        order: 3; /* 精华消息按钮排第三个 */
     }
     
     .notification-btn {
-        order: 3; /* 通知按钮排第三个 */
+        order: 4; /* 通知按钮排第四个 */
     }
 
     /* 按钮悬停效果保持不变 */
+    .home-btn:hover,
     .markdown-help-btn:hover,
     .highlights-btn:hover,
     .notification-btn:hover {
