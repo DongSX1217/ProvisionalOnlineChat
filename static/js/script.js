@@ -79,97 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
         bindEvents();
     }
 
-    // ==================== 精华消息功能 ====================
-    function addHighlightButton(div, msg) {
-        // 先检查是否已有按钮
-        const existingBtn = div.querySelector('.highlight-btn');
-        if (existingBtn) {
-            existingBtn.remove(); // 移除旧按钮
-        }
-
-        const highlightBtn = document.createElement('button');
-        highlightBtn.className = 'highlight-btn';
-        highlightBtn.title = msg.is_highlighted ? '移出精华' : '设为精华';
-        highlightBtn.innerHTML = msg.is_highlighted ? '⭐' : '☆';
-        
-        // 添加一次性事件监听
-        highlightBtn.addEventListener('click', function handler() {
-            toggleHighlightStatus(msg.sort_key);
-            this.removeEventListener('click', handler); // 点击后移除监听
-        });
-        
-        // 添加到删除按钮左侧
-        const deleteBtn = div.querySelector('.delete-btn');
-        if (deleteBtn) {
-            deleteBtn.parentNode.insertBefore(highlightBtn, deleteBtn);
-        }
-    }
-
-    // 切换精华状态
-    function toggleHighlightStatus(messageId) {
-        fetch('/toggle_highlight', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                message_id: messageId,
-                ip: userIP
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // 更新主消息列表和弹窗中的按钮状态
-                const buttons = document.querySelectorAll(`.message[data-id="${messageId}"] .highlight-btn`);
-                buttons.forEach(btn => {
-                    btn.innerHTML = data.is_highlighted ? '⭐' : '☆';
-                    btn.title = data.is_highlighted ? '移出精华' : '设为精华';
-                });
-                
-                // 如果取消精华，显示提示
-                if (!data.is_highlighted) {
-                    showError('取消精华设置将在刷新页面后生效', 'info');
-                }
-            } else {
-                showError(data.message || '操作失败');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showError('操作失败');
-        });
-    }
-
-    // 显示精华消息弹窗
-    function showHighlights() {
-        fetch('/get_highlights')
-        .then(response => response.json())
-        .then(data => {
-            if (data.highlights) {
-                const container = document.getElementById('highlightsContainer');
-                container.innerHTML = '';
-                
-                // 渲染精华消息，强制设置为精华状态
-                data.highlights.forEach(msg => {
-                    const el = createMessageElement({...msg, is_highlighted: true});
-                    container.appendChild(el);
-                });
-                
-                document.getElementById('highlightsModal').style.display = 'block';
-                overlay.style.display = 'block';
-            }
-        })
-        .catch(error => {
-            console.error('获取精华消息失败:', error);
-            showError('获取精华消息失败');
-        });
-    }
-
-    // 隐藏精华消息弹窗
-    function hideHighlights() {
-        document.getElementById('highlightsModal').style.display = 'none';
-        overlay.style.display = 'none';
-    }
-
 
     // ==================== 事件绑定函数 ====================
     function bindEvents() {
@@ -262,8 +171,107 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+
+        // 回到底部按钮
+        const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+        if (scrollToBottomBtn && scrollAnchor) {
+            scrollToBottomBtn.addEventListener('click', function() {
+                scrollAnchor.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
         
         console.log('Events bound successfully');
+    }
+
+    // ==================== 精华消息功能 ====================
+    function addHighlightButton(div, msg) {
+        // 先检查是否已有按钮
+        const existingBtn = div.querySelector('.highlight-btn');
+        if (existingBtn) {
+            existingBtn.remove(); // 移除旧按钮
+        }
+
+        const highlightBtn = document.createElement('button');
+        highlightBtn.className = 'highlight-btn';
+        highlightBtn.title = msg.is_highlighted ? '移出精华' : '设为精华';
+        highlightBtn.innerHTML = msg.is_highlighted ? '⭐' : '☆';
+        
+        // 添加一次性事件监听
+        highlightBtn.addEventListener('click', function handler() {
+            toggleHighlightStatus(msg.sort_key);
+            this.removeEventListener('click', handler); // 点击后移除监听
+        });
+        
+        // 添加到删除按钮左侧
+        const deleteBtn = div.querySelector('.delete-btn');
+        if (deleteBtn) {
+            deleteBtn.parentNode.insertBefore(highlightBtn, deleteBtn);
+        }
+    }
+
+    // 切换精华状态
+    function toggleHighlightStatus(messageId) {
+        fetch('/toggle_highlight', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                message_id: messageId,
+                ip: userIP
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // 更新主消息列表和弹窗中的按钮状态
+                const buttons = document.querySelectorAll(`.message[data-id="${messageId}"] .highlight-btn`);
+                buttons.forEach(btn => {
+                    btn.innerHTML = data.is_highlighted ? '⭐' : '☆';
+                    btn.title = data.is_highlighted ? '移出精华' : '设为精华';
+                });
+                
+                // 如果取消精华，显示提示
+                if (!data.is_highlighted) {
+                    showError('取消精华设置将在刷新页面后生效', 'info');
+                }
+            } else {
+                showError(data.message || '操作失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('操作失败');
+        });
+    }
+
+    // 显示精华消息弹窗
+    function showHighlights() {
+        fetch('/get_highlights')
+        .then(response => response.json())
+        .then(data => {
+            if (data.highlights) {
+                const container = document.getElementById('highlightsContainer');
+                container.innerHTML = '';
+                
+                // 渲染精华消息，强制设置为精华状态
+                data.highlights.forEach(msg => {
+                    const el = createMessageElement({...msg, is_highlighted: true});
+                    container.appendChild(el);
+                });
+                
+                document.getElementById('highlightsModal').style.display = 'block';
+                overlay.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('获取精华消息失败:', error);
+            showError('获取精华消息失败');
+        });
+    }
+
+    // 隐藏精华消息弹窗
+    function hideHighlights() {
+        document.getElementById('highlightsModal').style.display = 'none';
+        overlay.style.display = 'none';
     }
     
     // ==================== 核心功能函数 ====================

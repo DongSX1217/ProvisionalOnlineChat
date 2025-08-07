@@ -673,6 +673,33 @@ button {
     cursor: pointer;
 }
 
+/* 回到底部按钮样式 */
+.scroll-to-bottom-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(75, 108, 183, 0.7);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.scroll-to-bottom-btn:hover {
+    background: rgba(75, 108, 183, 0.9);
+    transform: scale(1.05);
+}
+
 @media (max-width: 600px) {
     .container {
         height: 95vh;
