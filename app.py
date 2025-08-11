@@ -289,8 +289,8 @@ def send_message():
                 file_length = file.tell()
                 file.seek(0)
                 
-                if file_length > 2 * 1024 * 1024:  # 限制2MB
-                    return jsonify({'status': 'error', 'message': '图片大小不能超过2MB'}), 400
+                if file_length > 10 * 1024 * 1024:  # 限制2MB
+                    return jsonify({'status': 'error', 'message': '图片大小不能超过10MB'}), 400
                 
                 # 保存图片到服务器本地
                 file_extension = file.filename.rsplit('.', 1)[1].lower()

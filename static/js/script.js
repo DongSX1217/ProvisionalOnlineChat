@@ -326,8 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 检查文件大小
-        if (file.size > 2 * 1024 * 1024) {
-            showError('图片大小不能超过2MB');
+        if (file.size > 10 * 1024 * 1024) {
+            showError('图片大小不能超过10MB');
             return;
         }
         
