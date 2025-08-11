@@ -50,6 +50,11 @@ CONFIG_VARS = {
         'description': "限制发言IP列表",
         'type': 'array'
     },
+    'banned_ips': {
+        'default': [],
+        'description': "禁止访问IP列表",
+        'type': 'array'
+    },
     'info_bar_content':{
         'default': "注意：仅保留最近100条消息 • 图片限制2MB以内 • 测试中<br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服",
         'description': "聊天页面顶端提示文字",
@@ -171,6 +176,14 @@ def save_chat_history():
     """保存聊天记录到文件"""
     with open(CHAT_HISTORY_FILE, 'w', encoding='utf-8') as f:
         json.dump(chat_history, f, ensure_ascii=False, indent=2)
+
+@app.before_request
+def check_banned_ip():
+    """禁止访问的IP列表拦截"""
+    banned_ips = config_values.get('banned_ips', [])
+    user_ip = get_client_ip()
+    if user_ip in banned_ips:
+        return "<br><br><h3>您的IP已被禁止访问，如有疑问，请联系bright2024_2035@163.com</h3>", 403
 
 @app.route('/')
 def home():
