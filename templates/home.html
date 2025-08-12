@@ -5,9 +5,17 @@
 <body> 
     <h1>Home</h1>
     <p>This is the home page.</p>
-    <a href="/chat" style="color:rgb(93, 55, 6);">聊天页面</a>
-    <a href="/manage" style="color:rgb(93, 55, 6);">管理页面</a>
+    <button id="chat">聊天页面</button>
+    <button id="manage">管理页面</button>
     <p> 更多页面正在开发中，敬请期待！</p>
+    <script>
+        document.getElementById("chat").addEventListener("click", function() {
+            window.location.href = "/chat";
+        });
+        document.getElementById("manage").addEventListener("click", function() {
+            window.location.href = "/manage";
+        });
+    </script>
     <br><br>
 
     <h3>用户使用须知和协议</h3>
