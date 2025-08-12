@@ -6,6 +6,7 @@ from datetime import datetime
 import threading
 import requests,smtplib
 from pathlib import Path
+from openai import OpenAI
 
 app = Flask(__name__)
 
@@ -59,7 +60,12 @@ CONFIG_VARS = {
         'default': "注意：仅保留最近100条消息 • 图片限制2MB以内 • 测试中<br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服",
         'description': "聊天页面顶端提示文字",
         'type': 'string'
-    }
+    },
+    'ai_system': {
+        'default': "你是一个聊天机器人，请注意遵守法律法规、规避敏感话题！",
+        'description': "AI的System参数",
+        'type': 'string'
+    },
 }
 
 # 当前配置变量值
@@ -91,12 +97,44 @@ def save_config_vars():
     except Exception as e:
         app.logger.error(f"保存配置变量失败: {str(e)}")
 
+def AIChat(api_key=None, 
+        message_text=None,
+        base_url=None, 
+        model_name=None):
+    try:
+        if api_key is None:
+            with open('secrets.json', 'r', encoding='utf-8') as f:
+                secrets = json.load(f)
+            api_key = secrets["ai"][0]["key"]
+        if model_name is None:
+            with open('secrets.json', 'r', encoding='utf-8') as f:
+                secrets = json.load(f)
+            api_key = secrets["ai"][0]["name"]
+        if base_url is None:
+            with open('secrets.json', 'r', encoding='utf-8') as f:
+                secrets = json.load(f)
+            api_key = secrets["ai"][0]["base_url"]
+        if message_text is None:
+            message_text = "你好！"
+        messages = [
+            {'role': 'system', 'content': config_values.get('ai_system', " ")},
+            {'role': 'user', 'content': message_text}
+            ]
+        client = OpenAI(api_key=api_key, base_url=base_url)
+        # 模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
+        completion = client.chat.completions.create(
+            model=model_name,  
+            messages=messages,
+        )
+        return completion.choices[0].message.content
+    except Exception as e:
+        return f"错误信息：{e}"
+
 def get_ip_location(ip):
     """获取IP的地理位置信息"""
     # 特殊处理本地IP
     if ip == '127.0.0.1':
         return "本地"
-    
     if ip == '124.23.134.28':
         return "陕西的abandon"
     
@@ -332,6 +370,20 @@ def send_message():
         # 添加到聊天历史记录
         with history_lock:
             chat_history.append(message_obj)
+            save_chat_history() 
+            if "@ai" in message:
+                result = AIChat(message_text=message.replace("@ai", ""))
+                ai_message = {
+                    'username': 'AI助手',
+                    'ip': '127.0.0.1',
+                    'message': result,
+                    'image': None,
+                    'timestamp': datetime.now().strftime("%H:%M:%S"),
+                    'sort_key': datetime.now().timestamp(),
+                    'location': '本地'
+                }
+                chat_history.append(ai_message)
+                save_chat_history()  # 新增保存操作
             # 保持只保留最近的100条消息
             if len(chat_history) > 100:
                 # 删除超出100条的最早消息中的图片文件
@@ -343,8 +395,7 @@ def send_message():
                             os.remove(image_path)
                         except Exception as e:
                             app.logger.error(f"删除图片文件失败: {str(e)}")
-            
-            save_chat_history()  # 新增保存操作
+                save_chat_history()  # 新增保存操作
         
         return jsonify({'status': 'success'})
     
