@@ -372,6 +372,8 @@ def send_message():
         with history_lock:
             chat_history.append(message_obj)
             save_chat_history() 
+            if "@ai" in message:
+                threading.Thread(target=api_ai, args=(message,)).start()
             # 保持只保留最近的100条消息
             if len(chat_history) > 100:
                 # 删除超出100条的最早消息中的图片文件
@@ -405,11 +407,6 @@ def api_ai(message_text):
     }
     chat_history.append(ai_message)
     save_chat_history()  # 新增保存操作
-
-    return jsonify({
-        'status': 'success',
-        'message': result
-    })
 
 @app.route('/image/<filename>')
 def serve_image(filename):
