@@ -372,19 +372,6 @@ def send_message():
         with history_lock:
             chat_history.append(message_obj)
             save_chat_history() 
-            if "@ai" in message:
-                result = AIChat(message_text=message.replace("@ai", ""))
-                ai_message = {
-                    'username': 'AI助手',
-                    'ip': '127.0.0.1',
-                    'message': result,
-                    'image': None,
-                    'timestamp': datetime.now().strftime("%H:%M:%S"),
-                    'sort_key': datetime.now().timestamp(),
-                    'location': '本地'
-                }
-                chat_history.append(ai_message)
-                save_chat_history()  # 新增保存操作
             # 保持只保留最近的100条消息
             if len(chat_history) > 100:
                 # 删除超出100条的最早消息中的图片文件
@@ -403,6 +390,26 @@ def send_message():
     except Exception as e:
         app.logger.error(f"发送消息时出错: {str(e)}")
         return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
+    
+@app.route('/api/ai_chat/<message_text>')
+def api_ai(message_text):
+    result = AIChat(message_text=message_text.replace("@ai", ""))
+    ai_message = {
+        'username': 'AI助手',
+        'ip': '127.0.0.1',
+        'message': result,
+        'image': None,
+        'timestamp': datetime.now().strftime("%H:%M:%S"),
+        'sort_key': datetime.now().timestamp(),
+        'location': '本地'
+    }
+    chat_history.append(ai_message)
+    save_chat_history()  # 新增保存操作
+
+    return jsonify({
+        'status': 'success',
+        'message': result
+    })
 
 @app.route('/image/<filename>')
 def serve_image(filename):

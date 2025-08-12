@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (previewImage) previewImage.src = '';
                 if (imagePreview) imagePreview.style.display = 'none';
                 selectedImage = null;
-                
+
                 fetchMessages(true);
             } else {
                 showError(data.message || '发送消息失败');
