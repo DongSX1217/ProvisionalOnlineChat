@@ -102,18 +102,14 @@ def AIChat(api_key=None,
         base_url=None, 
         model_name=None):
     try:
+        with open('secrets.json', 'r', encoding='utf-8') as f:
+            secrets = json.load(f)
         if api_key is None:
-            with open('secrets.json', 'r', encoding='utf-8') as f:
-                secrets = json.load(f)
             api_key = secrets["ai"][0]["key"]
         if model_name is None:
-            with open('secrets.json', 'r', encoding='utf-8') as f:
-                secrets = json.load(f)
-            api_key = secrets["ai"][0]["name"]
+            model_name = secrets["ai"][0]["name"]
         if base_url is None:
-            with open('secrets.json', 'r', encoding='utf-8') as f:
-                secrets = json.load(f)
-            api_key = secrets["ai"][0]["base_url"]
+            base_url = secrets["ai"][0]["base_url"]
         if message_text is None:
             message_text = "你好！"
         messages = [
