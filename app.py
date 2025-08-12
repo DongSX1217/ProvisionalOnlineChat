@@ -148,7 +148,7 @@ def get_ip_location(ip):
         response = requests.get(f'https://ip9.com.cn/get?ip={ip}', timeout=4)
         data = response.json()
         
-        if data.get('status') == 'success':
+        if data.get('ret') == '200':
             # 提取国家、省份和城市信息
             country = data.get('country', '')
             region = data.get('prov', '')
