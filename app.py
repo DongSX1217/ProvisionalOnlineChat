@@ -141,12 +141,11 @@ def get_ip_location(ip):
             return ip_location_cache[ip]
     
     try:
-        conn = http.client.HTTPSConnection("ip9.com.cn")
-        payload = ''
+        url = "https://ip9.com.cn/get?ip=58.30.0.0"
+        payload={}
         headers = {}
-        conn.request("GET", "/get?ip=58.30.0.0", payload, headers)
-        res = conn.getresponse()
-        data = res.read()
+        response = requests.request("GET", url, headers=headers, data=payload)
+        data = response.json()
         if data.get('ret') == '200':
             # 提取国家、省份和城市信息
             country = data.get('country', '')
