@@ -145,16 +145,19 @@ def get_ip_location(ip):
     
     try:
         # 使用ip-api.com获取地理位置信息
-        response = requests.get(f'http://ip-api.com/json/{ip}?fields=status,message,country,regionName,query&lang=zh-CN', timeout=3)
+        response = requests.get(f'https://ip9.com.cn/get?ip={ip}', timeout=4)
         data = response.json()
         
         if data.get('status') == 'success':
             # 提取国家、省份和城市信息
             country = data.get('country', '')
-            region = data.get('regionName', '')
+            region = data.get('prov', '')
             
             # 优先显示省份，其次是国家
-            location = region or country or '未知'
+            if country != "中国":
+                location = country
+            else:
+                location = region or country or '未知'
             
             # 将结果存入缓存
             with ip_location_lock:
