@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, make_response, send_
 import base64
 import time,json,re,os
 import uuid
+import http.client
 from datetime import datetime
 import threading
 import requests,smtplib
@@ -140,10 +141,12 @@ def get_ip_location(ip):
             return ip_location_cache[ip]
     
     try:
-        # 使用ip-api.com获取地理位置信息
-        response = requests.get(f'https://ip9.com.cn/get?ip={ip}', timeout=4)
-        data = response.json()
-        
+        conn = http.client.HTTPSConnection("ip9.com.cn")
+        payload = ''
+        headers = {}
+        conn.request("GET", "/get?ip=58.30.0.0", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
         if data.get('ret') == '200':
             # 提取国家、省份和城市信息
             country = data.get('country', '')
@@ -153,7 +156,7 @@ def get_ip_location(ip):
             if country != "中国":
                 location = country
             else:
-                location = region or country or '未知'
+                location = region or country or '不明'
             
             # 将结果存入缓存
             with ip_location_lock:
