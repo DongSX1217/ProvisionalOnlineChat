@@ -47,7 +47,7 @@ header p {
 
 .chat-container {
     flex: 1;
-    padding: 15px;
+    padding: 10px;
     overflow-y: auto;
     background-color: #f0f4f8;
     display: flex;
@@ -56,9 +56,9 @@ header p {
 
 .message {
     background: white;
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 12px;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 10px;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
     animation: fadeIn 0.3s ease-out;
     position: relative;
