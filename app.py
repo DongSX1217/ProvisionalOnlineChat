@@ -472,6 +472,20 @@ def delete_message():
                     del chat_history[i]
                     save_chat_history()  # 新增保存操作
                     return jsonify({'status': 'success'})                       
+            for i, h in enumerate(highlights):
+                if h['sort_key'] == message_id:
+                    if (user_ip not in admin) and (user_ip != h['ip']):
+                        return jsonify({'status': 'error', 'message': '无权删除此消息'}), 403
+                    if h.get('image'):
+                        image_path = os.path.join(IMAGE_STORAGE_PATH, h['image'])
+                        if os.path.exists(image_path):
+                            try:
+                                os.remove(image_path)
+                            except Exception as e:
+                                app.logger.error(f"删除图片文件失败: {str(e)}")
+                    del highlights[i]
+                    save_highlights()
+                    return jsonify({'status': 'success'})
             return jsonify({'status': 'error', 'message': '消息不存在'}), 404
         
     except Exception as e:
@@ -495,6 +509,11 @@ def toggle_highlight():
                 if msg['sort_key'] == message_id:
                     original_msg = msg
                     break
+            if not original_msg:
+                for h in highlights:
+                    if h['sort_key'] == message_id:
+                        original_msg = h
+                        break
         
         if not original_msg:
             return jsonify({'status': 'error', 'message': '消息不存在'}), 404
@@ -511,7 +530,7 @@ def toggle_highlight():
             highlights.append(highlight_msg)
         
         save_highlights()
-        save_chat_history()  # 新增保存操作
+        save_chat_history()  # 保存操作
         return jsonify({'status': 'success', 'is_highlighted': not is_highlighted})
     
     except Exception as e:
