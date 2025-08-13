@@ -80,6 +80,39 @@ document.addEventListener('DOMContentLoaded', function() {
         bindEvents();
     }
 
+    // ==================== 粘贴图片自动上传 ====================
+    document.addEventListener('paste', function (event) {
+        if (!event.clipboardData || !event.clipboardData.items) return;
+        for (let i = 0; i < event.clipboardData.items.length; i++) {
+            const item = event.clipboardData.items[i];
+            if (item.type.indexOf('image') !== -1) {
+                const file = item.getAsFile();
+                if (file) {
+                    // 检查文件类型和大小
+                    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    if (!validTypes.includes(file.type)) {
+                        showError('只支持JPEG、PNG或GIF格式的图片');
+                        return;
+                    }
+                    if (file.size > 10 * 1024 * 1024) {
+                        showError('图片大小不能超过10MB');
+                        return;
+                    }
+                    // 预览图片
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        if (previewImage) previewImage.src = e.target.result;
+                        if (imagePreview) imagePreview.style.display = 'block';
+                        selectedImage = file;
+                        if (imageUpload) imageUpload.value = ''; // 清空文件选择框
+                    };
+                    reader.readAsDataURL(file);
+                    event.preventDefault();
+                    break;
+                }
+            }
+        }
+    });
 
     // ==================== 事件绑定函数 ====================
     function bindEvents() {
