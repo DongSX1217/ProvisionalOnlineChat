@@ -666,8 +666,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         const allMessages = chatContainer.querySelectorAll('.message');
-        if (allMessages.length > 100) {
-            for (let i = 0; i < allMessages.length - 100; i++) {
+        // 如果消息数量超过300条，删除最旧的消息
+        if (allMessages.length > 300) {
+            for (let i = 0; i < allMessages.length - 300; i++) {
                 allMessages[i].remove();
             }
         }

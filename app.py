@@ -11,7 +11,7 @@ from openai import OpenAI
 
 app = Flask(__name__)
 
-# 存储聊天消息的列表（最多保留100条）
+# 存储聊天消息的列表（最多保留300条）
 chat_history = []
 history_lock = threading.Lock()
 
@@ -58,7 +58,7 @@ CONFIG_VARS = {
         'type': 'array'
     },
     'info_bar_content':{
-        'default': "注意：仅保留最近100条消息 • 图片限制2MB以内 • 测试中<br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服",
+        'default': "注意：仅保留最近300条消息 • 图片限制2MB以内 • 测试中<br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服",
         'description': "聊天页面顶端提示文字",
         'type': 'string'
     },
@@ -239,7 +239,7 @@ def chat_html():
     
     # 从配置中获取聊天室标题和信息栏内容
     chat_title = config_values.get('chat_title', '简易临时在线聊天室')
-    info_bar_content = config_values.get('info_bar_content', '注意：仅保留最近100条消息 • 图片限制2MB以内 • 测试中<br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服务器')
+    info_bar_content = config_values.get('info_bar_content', '注意：仅保留最近300条消息 • 图片限制2MB以内 • 测试中<br>仅供个人学习交流使用，受邀才可使用，严禁公开服务器IP，严禁发布违法内容，严禁故意损坏服务器')
     
     resp = make_response(render_template('chat.html', chat_title=chat_title, info_bar_content=info_bar_content))
     
@@ -374,9 +374,9 @@ def send_message():
             save_chat_history() 
             if "@ai" in message:
                 threading.Thread(target=api_ai, args=(message,)).start()
-            # 保持只保留最近的100条消息
-            if len(chat_history) > 100:
-                # 删除超出100条的最早消息中的图片文件
+            # 保持只保留最近的300条消息
+            if len(chat_history) > 300:
+                # 删除超出300条的最早消息中的图片文件
                 removed_message = chat_history.pop(0)
                 if removed_message.get('image'):
                     image_path = os.path.join(IMAGE_STORAGE_PATH, removed_message['image'])
