@@ -146,7 +146,7 @@ def get_ip_location(ip):
         headers = {}
         response = requests.request("GET", url, headers=headers, data=payload)
         data = response.json()
-        if data['ret'] == '200':
+        try:
             # 提取国家、省份和城市信息
             country = data['data'].get('country', '')
             region = data['data'].get('prov', '')
@@ -162,8 +162,8 @@ def get_ip_location(ip):
                 ip_location_cache[ip] = location
             
             return location
-        else:
-            return '未知'
+        except KeyError as e:
+            return f"解析IP地理位置失败: {str(e)}"
     except Exception as e:
         app.logger.error(f"获取地理位置失败: {str(e)}")
         return '未知'
