@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let highlights = []; 
     let adminIps = [];
     let blockedIps = [];
-    
+    let newMessageArrived = false;
+
     console.log('Element check:');
     console.log('sendBtn:', sendBtn);
     console.log('emojiBtn:', emojiBtn);
@@ -177,6 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (scrollToBottomBtn && scrollAnchor) {
             scrollToBottomBtn.addEventListener('click', function() {
                 scrollAnchor.scrollIntoView({ behavior: 'smooth' });
+                // 恢复按钮颜色
+                scrollToBottomBtn.style.backgroundColor = '';
+                scrollToBottomBtn.style.color = '';
+                newMessageArrived = false;
             });
         }
         
@@ -590,15 +595,23 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoadingIndicator();
             return;
         }
-        
-        // 隐藏加载提示
-        hideLoadingIndicator();
+        hideLoadingIndicator(); // 隐藏加载提示
         
         // 获取所有新消息（基于lastMessageId）
         const newMessages = messages.filter(msg => msg.sort_key > lastMessageId);
         
         if (newMessages.length === 0) {
             return;
+        }
+
+        // 如果有新消息且不是自动滚动到底部，则让“底”按钮变红
+        if (newMessages.length > 0 && !scrollToBottom) {
+            const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+            if (scrollToBottomBtn) {
+                scrollToBottomBtn.style.backgroundColor = '#e74c3c'; // 红色
+                scrollToBottomBtn.style.color = '#fff';
+                newMessageArrived = true;
+            }
         }
         
         // 更新lastMessageId为最新消息的时间戳
@@ -628,6 +641,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (scrollToBottom) {
             scrollToBottomSmooth();
+            // 恢复按钮颜色
+            const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+            if (scrollToBottomBtn) {
+                scrollToBottomBtn.style.backgroundColor = '';
+                scrollToBottomBtn.style.color = '';
+                newMessageArrived = false;
+            }
         }
         
         // 延迟加载图片
