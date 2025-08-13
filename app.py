@@ -448,6 +448,7 @@ def delete_message():
     try:
         data = request.get_json()
         message_id = data.get('message_id')
+        admin = config_values.get('admin_ips', [])
         user_ip = get_client_ip()
         
         if not message_id or not user_ip:
