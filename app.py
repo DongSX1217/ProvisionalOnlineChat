@@ -583,10 +583,99 @@ def get_highlights():
     except Exception as e:
         app.logger.error(f"获取精华消息失败: {str(e)}")
         return jsonify({'status': 'error', 'message': f'获取精华失败: {str(e)}'}), 500
+    
+@app.route('/log')
+def view_log():
+    """在线查看操作日志"""
+    # 获取日期参数
+    date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    log_file = os.path.join('./data', f'operation_{date}.log')
+    logs = []
+    if os.path.exists(log_file):
+        with open(log_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                try:
+                    logs.append(json.loads(line))
+                except Exception:
+                    continue
+    # 分页
+    page = int(request.args.get('page', 1))
+    page_size = 30
+    total = len(logs)
+    logs = logs[::-1]  # 最新在前
+    logs_page = logs[(page-1)*page_size: page*page_size]
+    # 搜索
+    keyword = request.args.get('kw', '').strip()
+    if keyword:
+        logs_page = [log for log in logs_page if keyword in json.dumps(log, ensure_ascii=False)]
+    # HTML渲染
+    html = """
+    <html>
+    <head>
+        <title>操作日志查看</title>
+        <style>
+            body {{ font-family: '微软雅黑', Arial; background: #f7f7f7; }}
+            table {{ border-collapse: collapse; width: 98%; margin: 20px auto; background: #fff; }}
+            th, td {{ border: 1px solid #ddd; padding: 8px; }}
+            th {{ background: #eee; }}
+            tr:nth-child(even){{background-color: #f2f2f2;}}
+            .search-bar {{ margin: 20px auto; width: 98%; text-align: right; }}
+            .pagination {{ margin: 10px auto; width: 98%; text-align: center; }}
+            .pagination a {{ margin: 0 5px; text-decoration: none; color: #007bff; }}
+        </style>
+    </head>
+    <body>
+        <h2 style="text-align:center;">操作日志（{date}）</h2>
+        <div class="search-bar">
+            <form method="get">
+                <input type="date" name="date" value="{date}">
+                <input type="text" name="kw" placeholder="关键词" value="{kw}">
+                <button type="submit">搜索</button>
+            </form>
+        </div>
+        <table>
+            <tr>
+                <th>时间</th>
+                <th>操作</th>
+                <th>操作者IP</th>
+                <th>操作者属地</th>
+                <th>目标IP</th>
+                <th>目标属地</th>
+                <th>内容</th>
+                <th>结果</th>
+                <th>级别</th>
+            </tr>
+    """.format(date=date, kw=keyword)
+    for log in logs_page:
+        html += f"""
+        <tr>
+            <td>{log.get('datetime','')}</td>
+            <td>{log.get('action','')}</td>
+            <td>{log.get('operator_ip','')}</td>
+            <td>{log.get('operator_location','')}</td>
+            <td>{log.get('target_ip','')}</td>
+            <td>{log.get('target_location','')}</td>
+            <td>{log.get('content','')}</td>
+            <td>{log.get('result','')}</td>
+            <td>{log.get('level','')}</td>
+        </tr>
+        """
+    html += "</table>"
+    # 分页导航
+    total_pages = (total + page_size - 1) // page_size
+    html += '<div class="pagination">'
+    for p in range(1, total_pages+1):
+        if p == page:
+            html += f'<b>{p}</b>'
+        else:
+            html += f'<a href="?date={date}&page={p}&kw={keyword}">{p}</a>'
+    html += '</div></body></html>'
+    return html
 
-def log_operation(action, operator_ip, operator_location, target_ip, target_location, content):
-    """记录操作日志到本地文件"""
-    log_file = './data/operation.log'
+def log_operation(action, operator_ip, operator_location, target_ip, target_location, content, result='success', level='info'):
+    """记录操作日志到本地文件（按天分割）"""
+    log_dir = './data'
+    log_file = os.path.join(log_dir, f'operation_{datetime.now().strftime("%Y-%m-%d")}.log')
     log_entry = {
         'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'action': action,
@@ -594,7 +683,9 @@ def log_operation(action, operator_ip, operator_location, target_ip, target_loca
         'operator_location': operator_location,
         'target_ip': target_ip,
         'target_location': target_location,
-        'content': content
+        'content': content,
+        'result': result,
+        'level': level
     }
     try:
         with open(log_file, 'a', encoding='utf-8') as f:
