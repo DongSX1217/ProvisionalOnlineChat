@@ -141,7 +141,7 @@ def get_ip_location(ip):
             return ip_location_cache[ip]
     
     try:
-        url = "https://ip9.com.cn/get?ip=58.30.0.0"
+        url = f"https://ip9.com.cn/get?ip={ip}"
         payload={}
         headers = {}
         response = requests.request("GET", url, headers=headers, data=payload)
