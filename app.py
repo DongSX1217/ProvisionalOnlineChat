@@ -146,10 +146,10 @@ def get_ip_location(ip):
         headers = {}
         response = requests.request("GET", url, headers=headers, data=payload)
         data = response.json()
-        if data.get('ret') == '200':
+        if data['ret'] == '200':
             # 提取国家、省份和城市信息
-            country = data.get('country', '')
-            region = data.get('prov', '')
+            country = data['data'].get('country', '')
+            region = data['data'].get('prov', '')
             
             # 优先显示省份，其次是国家
             if country != "中国":
