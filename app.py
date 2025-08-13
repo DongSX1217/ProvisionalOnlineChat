@@ -38,7 +38,13 @@ ip_location_lock = threading.Lock()
 admin = ['127.0.0.1','223.160.176.6','27.225.45.194']
 
 # 密码配置
-SECRET_PASSWORD = "1919810"
+with open('secrets.json', 'r', encoding='utf-8') as f:
+    data_secret = json.load(f)
+    if data_secret.get('manage','') != '':
+        SECRET_PASSWORD = data_secret.get('manage','')
+    else:
+        # 如果没有设置密码，则使用默认密码
+        SECRET_PASSWORD = "1919810"
 
 # 配置变量定义 (可轻松添加更多变量)
 CONFIG_VARS = {
