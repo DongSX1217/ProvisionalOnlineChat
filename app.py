@@ -425,10 +425,18 @@ def get_messages():
         with history_lock:
             # 按时间戳排序（从小到大，最新的在最后）
             sorted_history = sorted(chat_history, key=lambda x: x['sort_key'])
-            # 为图片消息添加图片URL
+            # 为图片消息添加图片URL和高度
             for msg in sorted_history:
                 if msg.get('image'):
                     msg['image_url'] = f"/image/{msg['image']}"
+                    # 获取图片高度（单位：像素），如果图片存在则读取实际高度，否则为None
+                    try:
+                        from PIL import Image # 使用PIL库读取图片高度
+                        image_path = os.path.join(IMAGE_STORAGE_PATH, msg['image'])
+                        with Image.open(image_path) as img:
+                            msg['image_height'] = img.height
+                    except Exception as e:
+                        msg['image_height'] = None
             return jsonify({'messages': sorted_history})
     except Exception as e:
         app.logger.error(f"获取消息时出错: {str(e)}")

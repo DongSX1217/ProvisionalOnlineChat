@@ -610,6 +610,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // 渲染所有新消息（按时间顺序）
         newMessages.forEach(msg => {
             const messageElement = createMessageElement(msg, !!msg.image); // 对于图片消息，先创建占位符
+            if (msg.image && msg.image_height) {
+                const placeholder = messageElement.querySelector('.image-placeholder');
+                if (placeholder) {
+                    placeholder.style.height = msg.image_height + 'px';
+                }
+            }
             scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
         });
         
