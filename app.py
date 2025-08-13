@@ -450,6 +450,7 @@ def delete_message():
         message_id = data.get('message_id')
         admin = config_values.get('admin_ips', [])
         user_ip = get_client_ip()
+        operator_location = get_ip_location(user_ip)
         
         if not message_id or not user_ip:
             return jsonify({'status': 'error', 'message': '参数错误'}), 400
@@ -471,6 +472,15 @@ def delete_message():
                             app.logger.error(f"删除图片文件失败: {str(e)}")
                     del chat_history[i]
                     save_chat_history()  # 新增保存操作
+                    # 日志记录
+                    log_operation(
+                        action='撤回消息',
+                        operator_ip=user_ip,
+                        operator_location=operator_location,
+                        target_ip=msg['ip'],
+                        target_location=get_ip_location(msg['ip']),
+                        content=msg['message']
+                    )
                     return jsonify({'status': 'success'})                       
             for i, h in enumerate(highlights):
                 if h['sort_key'] == message_id:
@@ -485,6 +495,15 @@ def delete_message():
                                 app.logger.error(f"删除图片文件失败: {str(e)}")
                     del highlights[i]
                     save_highlights()
+                    # 日志记录
+                    log_operation(
+                        action='撤回精华消息',
+                        operator_ip=user_ip,
+                        operator_location=operator_location,
+                        target_ip=h['ip'],
+                        target_location=get_ip_location(h['ip']),
+                        content=h['message']
+                    )
                     return jsonify({'status': 'success'})
             return jsonify({'status': 'error', 'message': '消息不存在'}), 404
         
@@ -498,6 +517,7 @@ def toggle_highlight():
         data = request.get_json()
         message_id = data.get('message_id')
         user_ip = get_client_ip()
+        operator_location = get_ip_location(user_ip)
         
         if not message_id or not user_ip:
             return jsonify({'status': 'error', 'message': '参数错误'}), 400
@@ -523,11 +543,27 @@ def toggle_highlight():
         if is_highlighted:
             # 移出精华
             highlights[:] = [h for h in highlights if h['sort_key'] != message_id]
+            log_operation(
+                action='取消精华',
+                operator_ip=user_ip,
+                operator_location=operator_location,
+                target_ip=original_msg['ip'],
+                target_location=get_ip_location(original_msg['ip']),
+                content=original_msg['message']
+            )
         else:
             # 添加为精华
             highlight_msg = original_msg.copy()
             highlight_msg['highlighted_at'] = datetime.now().timestamp()
             highlights.append(highlight_msg)
+            log_operation(
+                action='设置精华',
+                operator_ip=user_ip,
+                operator_location=operator_location,
+                target_ip=original_msg['ip'],
+                target_location=get_ip_location(original_msg['ip']),
+                content=original_msg['message']
+            )
         
         save_highlights()
         save_chat_history()  # 保存操作
@@ -547,6 +583,24 @@ def get_highlights():
     except Exception as e:
         app.logger.error(f"获取精华消息失败: {str(e)}")
         return jsonify({'status': 'error', 'message': f'获取精华失败: {str(e)}'}), 500
+
+def log_operation(action, operator_ip, operator_location, target_ip, target_location, content):
+    """记录操作日志到本地文件"""
+    log_file = './data/operation.log'
+    log_entry = {
+        'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'action': action,
+        'operator_ip': operator_ip,
+        'operator_location': operator_location,
+        'target_ip': target_ip,
+        'target_location': target_location,
+        'content': content
+    }
+    try:
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+    except Exception as e:
+        app.logger.error(f"写入操作日志失败: {str(e)}")
 
 if __name__ == '__main__':
     Path('./data').mkdir(exist_ok=True) # 确保数据目录存在
