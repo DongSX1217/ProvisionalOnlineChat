@@ -459,13 +459,19 @@ def delete_message():
             for i, msg in enumerate(chat_history):
                 if msg['sort_key'] == message_id:
                     # 检查权限
-                    if (user_ip in admin) or (user_ip == msg['ip']):
-                        del chat_history[i]
-                        save_chat_history()  # 新增保存操作
-                        return jsonify({'status': 'success'})
-                    else:
+                    if (user_ip not in admin) and (user_ip != msg['ip']):
                         return jsonify({'status': 'error', 'message': '无权删除此消息'}), 403
-            
+                    if msg.get('image'): # 如果有图片，删除本地图片文件
+                        image_path = os.path.join(IMAGE_STORAGE_PATH, msg['image'])
+                        if not os.path.exists(image_path):
+                            app.logger.error(f"尝试删除不存在的图片文件: {image_path}")
+                        try:
+                            os.remove(image_path)
+                        except Exception as e:
+                            app.logger.error(f"删除图片文件失败: {str(e)}")
+                    del chat_history[i]
+                    save_chat_history()  # 新增保存操作
+                    return jsonify({'status': 'success'})                       
             return jsonify({'status': 'error', 'message': '消息不存在'}), 404
         
     except Exception as e:
