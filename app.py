@@ -264,7 +264,7 @@ class API:
 class File:
     """文件相关API"""
     @staticmethod
-    @app.route('/file/image/<filename>')
+    @app.route('/image/<filename>')
     def serve_image(filename):
         """提供图片文件服务"""
         try:
@@ -313,7 +313,7 @@ class Message:
                     file_length = file.tell()
                     file.seek(0)
                     
-                    if file_length > 10 * 1024 * 1024:  # 限制2MB
+                    if file_length > 10 * 1024 * 1024:  # 限制10MB
                         return jsonify({'status': 'error', 'message': '图片大小不能超过10MB'}), 400
                     
                     # 保存图片到服务器本地
@@ -365,7 +365,7 @@ class Message:
             return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
 
     @app.route('/message/get')
-    def get():
+    def get_message():
         """获取最新的聊天消息（按时间正序排列，最新的在底部）"""
         try:
             # 返回按时间正序排列的消息（最新的在最后）
@@ -482,7 +482,7 @@ class Message:
                             original_msg = h
                             break
             
-            if not original_msg:
+            if not original_msg: # 如果没有找到消息
                 return jsonify({'status': 'error', 'message': '消息不存在'}), 404
             
             # 切换精华状态
@@ -490,7 +490,7 @@ class Message:
             if is_highlighted:
                 # 移出精华
                 highlights[:] = [h for h in highlights if h['sort_key'] != message_id]
-                Log.log_operation(
+                Log.operation(
                     action='取消精华',
                     operator_ip=user_ip,
                     operator_location=operator_location,
@@ -503,7 +503,7 @@ class Message:
                 highlight_msg = original_msg.copy()
                 highlight_msg['highlighted_at'] = datetime.now().timestamp()
                 highlights.append(highlight_msg)
-                Log.log_operation(
+                Log.operation(
                     action='设置精华',
                     operator_ip=user_ip,
                     operator_location=operator_location,
@@ -511,9 +511,8 @@ class Message:
                     target_location=API.get_ip_location(original_msg['ip']),
                     content=original_msg['message']
                 )
-            
-            Message.save_highlights() # 保存精华消息
-            Message.save_chat_history()  # 保存聊天记录
+            Message.save_highlights()
+            Message.save_messages()
             return jsonify({'status': 'success', 'is_highlighted': not is_highlighted})
         
         except Exception as e:
@@ -552,8 +551,9 @@ class Message:
 class Config:
     """配置相关函数"""
 
-    @app.route('/config/get')
-    def get():
+    @app.route('/config/get_config')
+    def get_config():
+        global config_values
         return jsonify({
             'admin_ips': config_values.get('admin_ips', []),
             'blocked_ips': config_values.get('blocked_ips', [])
@@ -561,6 +561,7 @@ class Config:
     
     def save():
         """保存配置变量到文件"""
+        global config_values
         try:
             with open(VARS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(config_values, f, ensure_ascii=False, indent=2)
@@ -570,6 +571,7 @@ class Config:
     @app.route('/config/update_variables', methods=['POST'])
     def update_variables():
         """更新配置变量"""
+        global config_values
         try:
             data = request.get_json() # 获取JSON数据
             if not data:

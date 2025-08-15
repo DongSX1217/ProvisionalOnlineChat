@@ -578,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 获取消息
     function fetchMessages(scrollToBottom = false) {
         // 获取配置信息
-        fetch('/config/get')
+        fetch('/config/get_config')
         .then(response => response.json())
         .then(config => {
             adminIps = config.admin_ips || [];
@@ -999,7 +999,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     HighlightUI();
 
-    fetch('/config/get')  // 先获取配置
+    fetch('/config/get_config')  // 先获取配置
     .then(response => response.json())
     .then(config => {
         adminIps = config.admin_ips || [];
