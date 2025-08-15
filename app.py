@@ -8,6 +8,7 @@ import threading
 import requests,smtplib
 from pathlib import Path
 from openai import OpenAI
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
@@ -258,6 +259,28 @@ def chat_html():
 def manage_html():
     """管理页面"""
     return render_template('manage.html')
+
+@app.route('/news')
+def news():
+    w="none"
+    page = requests.get("http://news.cn/")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    w = soup.find_all(class_="part bg-white")[0]
+    m = [(a['href'], a.get_text()) for a in w.find_all('a') if 'href' in a.attrs]
+    return render_template('news.html',w=w,links=m)
+
+@app.route('api/news')
+def api_news():
+    """API接口获取新闻"""
+    try:
+        page = requests.get("http://news.cn/")
+        soup = BeautifulSoup(page.content, 'html.parser')
+        w = soup.find_all(class_="part bg-white")[0]
+        links = {a['href']: a.get_text() for a in w.find_all('a') if 'href' in a.attrs}
+        return jsonify({'status': 'success', 'links': links})
+    except Exception as e:
+        app.logger.error(f"获取新闻失败: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'获取新闻失败: {str(e)}'}), 500
 
 @app.route('/check_password', methods=['POST'])
 def check_password():
