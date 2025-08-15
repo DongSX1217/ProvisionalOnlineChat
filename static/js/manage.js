@@ -8,7 +8,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: '/check_password',
+            url: '/api/check_password',
             method: 'POST',
             data: { password: password },
             success: function(response) {
@@ -108,7 +108,7 @@ $(document).ready(function() {
             });
             
             $.ajax({
-                url: '/update_variables',
+                url: '/config/update_variables',
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(formData),

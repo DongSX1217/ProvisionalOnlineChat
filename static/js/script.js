@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 切换精华状态
     function toggleHighlightStatus(messageId) {
-        fetch('/toggle_highlight', {
+        fetch('/message/toggle_highlight', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 显示精华消息弹窗
     function showHighlights() {
-        fetch('/get_highlights')
+        fetch('/message/get_highlights')
         .then(response => response.json())
         .then(data => {
             if (data.highlights) {
@@ -551,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('image', selectedImage);
         }
         
-        fetch('/send_message', {
+        fetch('/message/send', {
             method: 'POST',
             body: formData
         })
@@ -578,14 +578,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // 获取消息
     function fetchMessages(scrollToBottom = false) {
         // 获取配置信息
-        fetch('/get_config')
+        fetch('/config/get')
         .then(response => response.json())
         .then(config => {
             adminIps = config.admin_ips || [];
             blockedIps = config.blocked_ips || [];
             
             // 获取消息
-            return fetch('/get_messages');
+            return fetch('/message/get');
         })
         .then(response => response.json())
         .then(data => {
@@ -883,7 +883,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function deleteMessage(messageId) {
         if (!confirm('确定要撤回这条消息吗？')) return;
         
-        fetch('/delete_message', {
+        fetch('/message/delete', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -963,7 +963,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 添加获取精华消息的函数
     function fetchHighlights() {
-        fetch('/get_highlights')
+        fetch('/message/get_highlights')
         .then(response => response.json())
         .then(data => {
             if (data.highlights) {
@@ -999,14 +999,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     HighlightUI();
 
-    fetch('/get_config')  // 先获取配置
+    fetch('/config/get')  // 先获取配置
     .then(response => response.json())
     .then(config => {
         adminIps = config.admin_ips || [];
         blockedIps = config.blocked_ips || [];
         
         // 然后获取用户IP
-        fetch('/get_messages')
+        fetch('/message/get')
         .then(response => response.json())
         .then(data => {
             if (data.messages && Array.isArray(data.messages) && data.messages.length > 0) {

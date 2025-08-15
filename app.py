@@ -736,14 +736,14 @@ class Log:
 
 pages = Pages()
 api = API()
-image_api = ImageAPI()
+image_api = File()
 message = Message()
 config = Config()
 
 if __name__ == '__main__':
     Path('./data').mkdir(exist_ok=True) # 确保数据目录存在
     Path(IMAGE_STORAGE_PATH).mkdir(exist_ok=True)  # 创建图片存储目录
-    chat_history = load_chat_history() # 初始化时加载聊天记录 
-    load_config_vars() # 初始化时加载配置变量
+    chat_history = Message.load_messages() # 初始化时加载聊天记录 
+    Config.load_config_vars() # 初始化时加载配置变量
     app.logger.info(f"初始配置: {config_values}") # 初始化时打印配置
     app.run(host='0.0.0.0', port=5000, debug=True)
