@@ -30,7 +30,7 @@
             padding: 20px;
             border: 1px solid #ddd;
             border-radius: 5px;
-            display: none;
+            display: block; /* ← 这里改为block */
         }
         .error-message {
             color: red;
@@ -42,8 +42,10 @@
         }
         input[type="password"], input[type="text"] {
             padding: 8px;
-            width: 200px;
+            width: 40rem;
+            height: 4rem;
             margin-right: 10px;
+            font-size: 0.9rem;
         }
         button {
             padding: 8px 15px;
@@ -68,21 +70,16 @@
 </head>
 <body>
     <h2>欢迎使用管理页面！</h2>
-    
-    <div class="password-form">
-        <h3>请输入管理密码</h3>
-        <input type="password" id="passwordInput" placeholder="输入密码">
-        <button id="submitPassword">验证</button>
-        <div id="errorMessage" class="error-message"></div>
-    </div>
-    
-    <div id="resultContainer" class="result-container">
-        <h3>当前配置值：</h3>
-        <!-- 动态内容 -->
-    </div>
-
     <div id="editContainer" class="edit-container">
         <!-- 编辑表单将在这里动态生成 -->
     </div>
+    <div id="saveMessage" class="success-message"></div>
+    <script>
+        // 页面加载时直接渲染变量
+        const configVars = {{ config_vars|tojson }};
+        const varDescriptions = {{ var_descriptions|tojson }};
+        const varTypes = {{ var_types|tojson }};
+    </script>
+    <script src="/static/js/manage.js"></script>
 </body>
 </html>

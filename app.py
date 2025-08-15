@@ -137,7 +137,13 @@ class Pages:
     @app.route('/manage')
     def manage_html():
         """管理页面"""
-        return render_template('manage.html')
+         # 只渲染变量，不做权限校验，前端可直接展示
+        return render_template(
+            'manage.html',
+            config_vars=config_values,
+            var_descriptions={name: data['description'] for name, data in CONFIG_VARS.items()},
+            var_types={name: data.get('type', 'string') for name, data in CONFIG_VARS.items()}
+        )
     
     @app.route('/news')
     def news():
@@ -574,6 +580,9 @@ class Config:
         global config_values
         try:
             data = request.get_json() # 获取JSON数据
+            password = data.pop('_password', None) # 取出密码字段
+            if not password or password != SECRET_PASSWORD:
+                return jsonify({'status': 'error', 'message': '密码错误，无法保存！'}), 403
             if not data:
                 return jsonify({'status': 'error', 'message': '无效的JSON数据'}), 400
                 
