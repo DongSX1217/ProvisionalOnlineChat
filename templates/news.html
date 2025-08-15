@@ -12,6 +12,7 @@
 <body>
     <h2>新闻列表</h2>
     <div class="news-list" id="newsList"></div>
+    {{links}}
     <script>
         // links 是从 Flask 后端传递过来的列表，每个元素为 [url, 标题]
         const links = {{ links | tojson }};

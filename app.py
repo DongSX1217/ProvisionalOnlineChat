@@ -269,7 +269,7 @@ def news():
     m = [(a['href'], a.get_text()) for a in w.find_all('a') if 'href' in a.attrs]
     return render_template('news.html',w=w,links=m)
 
-@app.route('api/news')
+@app.route('/api/news')
 def api_news():
     """API接口获取新闻"""
     try:
