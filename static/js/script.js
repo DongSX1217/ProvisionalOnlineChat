@@ -16,16 +16,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 服务端推送历史消息
     socket.on('history', function(messages) {
+        // 初始化 lastMessageId
+        if (messages.length > 0) {
+            lastMessageId = Math.max(...messages.map(msg => msg.sort_key));
+        }
         renderMessages(messages, true);
         fetchHighlights();
     });
 
     // 服务端推送新消息
     socket.on('new_message', function(msg) {
+        // 更新 lastMessageId
+        if (msg.sort_key > lastMessageId) {
+            lastMessageId = msg.sort_key;
+        }
         renderMessages([msg], true);
         sendNotification('新消息', msg.username + ': ' + msg.message);
     });
-
     // 服务端推送消息撤回
     socket.on('message_deleted', function(data) {
         const messageElement = document.querySelector(`.message[data-id="${data.message_id}"]`);
@@ -35,6 +42,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // 服务端推送精华切换
     socket.on('highlight_toggled', function(data) {
         fetchHighlights();
+    });
+
+    // 断线重连处理
+    socket.on('disconnect', function() {
+        showError('连接已断开，正在尝试重连...');
+    });
+    socket.on('connect', function() {
+        showError('已重新连接');
+        // 重新获取历史消息
+        socket.emit('request_history');
     });
     
     // ==================== 初始化变量 ====================
@@ -953,10 +970,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     HighlightUI();
-
-    socket.on('history', function(messages) {
-    renderMessages(messages, true);
-    });
 
     fetch('/config/get_config')
     .then(response => response.json())
