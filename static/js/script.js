@@ -1,6 +1,41 @@
 // 确保所有代码在页面加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
+    const socket = io();
+
+     // 连接 WebSocket，获取用户IP和历史消息
+    socket.on('connect', function() {
+        console.log('WebSocket已连接');
+    });
+
+    // 服务端推送用户IP
+    socket.on('user_ip', function(ip) {
+        userIP = ip;
+        console.log('获取到用户IP:', userIP);
+    });
+
+    // 服务端推送历史消息
+    socket.on('history', function(messages) {
+        renderMessages(messages, true);
+        fetchHighlights();
+    });
+
+    // 服务端推送新消息
+    socket.on('new_message', function(msg) {
+        renderMessages([msg], true);
+        sendNotification('新消息', msg.username + ': ' + msg.message);
+    });
+
+    // 服务端推送消息撤回
+    socket.on('message_deleted', function(data) {
+        const messageElement = document.querySelector(`.message[data-id="${data.message_id}"]`);
+        if (messageElement) messageElement.remove();
+    });
+
+    // 服务端推送精华切换
+    socket.on('highlight_toggled', function(data) {
+        fetchHighlights();
+    });
     
     // ==================== 初始化变量 ====================
     const emojis = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", 
@@ -249,35 +284,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 切换精华状态
     function toggleHighlightStatus(messageId) {
-        fetch('/message/toggle_highlight', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                message_id: messageId,
-                ip: userIP
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // 更新主消息列表和弹窗中的按钮状态
-                const buttons = document.querySelectorAll(`.message[data-id="${messageId}"] .highlight-btn`);
-                buttons.forEach(btn => {
-                    btn.innerHTML = data.is_highlighted ? '⭐' : '☆';
-                    btn.title = data.is_highlighted ? '移出精华' : '设为精华';
-                });
-                
-                // 如果取消精华，显示提示
-                if (!data.is_highlighted) {
-                    showError('取消精华设置将在刷新页面后生效', 'info');
-                }
-            } else {
-                showError(data.message || '操作失败');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showError('操作失败');
+        socket.emit('toggle_highlight', {
+            message_id: messageId,
+            ip: userIP
         });
     }
 
@@ -539,68 +548,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const username = usernameInput ? usernameInput.value.trim() || '匿名' : '匿名';
         const message = messageInput ? messageInput.value.trim() : '';
         
-        if (!message && !selectedImage) {
-            showError('消息内容不能为空');
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('username', username);
-        formData.append('message', message);
+        let imageData = null;
         if (selectedImage) {
-            formData.append('image', selectedImage);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imageData = e.target.result;
+                socket.emit('send_message', {
+                    username: username,
+                    message: message,
+                    image: imageData
+                });
+                removeSelectedImage();
+            };
+            reader.readAsDataURL(selectedImage);
+        } else {
+            if (!message) {
+                showError('消息内容不能为空');
+                return;
+            }
+            socket.emit('send_message', {
+                username: username,
+                message: message
+            });
         }
-        
-        fetch('/message/send', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                if (messageInput) messageInput.value = '';
-                if (imageUpload) imageUpload.value = '';
-                if (previewImage) previewImage.src = '';
-                if (imagePreview) imagePreview.style.display = 'none';
-                selectedImage = null;
-
-                fetchMessages(true);
-            } else {
-                showError(data.message || '发送消息失败');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showError('发送消息时出错');
-        });
-    }
-    
-    // 获取消息
-    function fetchMessages(scrollToBottom = false) {
-        // 获取配置信息
-        fetch('/config/get_config')
-        .then(response => response.json())
-        .then(config => {
-            adminIps = config.admin_ips || [];
-            blockedIps = config.blocked_ips || [];
-            
-            // 获取消息
-            return fetch('/message/get');
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.messages && Array.isArray(data.messages)) {
-                // 设置userIP（如果尚未设置）
-                if (!userIP && data.messages.length > 0) {
-                    userIP = data.messages[0].ip || '';
-                }
-                
-                renderMessages(data.messages, scrollToBottom);
-            }
-        })
-        .catch(error => {
-            console.error('获取数据失败:', error);
-        });
+        if (messageInput) messageInput.value = '';
     }
     
     // 发送通知
@@ -648,21 +619,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 更新lastMessageId为最新消息的时间戳
-        lastMessageId = Math.max(...messages.map(msg => msg.sort_key));
+        if (newMessages.length > 0) {
+            lastMessageId = Math.max(...newMessages.map(msg => msg.sort_key));
+        }
         
         // 按时间戳排序所有新消息
         newMessages.sort((a, b) => a.sort_key - b.sort_key);
         
         // 渲染所有新消息（按时间顺序）
         newMessages.forEach(msg => {
-            const messageElement = createMessageElement(msg, !!msg.image); // 对于图片消息，先创建占位符
-            if (msg.image && msg.image_height) {
-                const placeholder = messageElement.querySelector('.image-placeholder');
-                if (placeholder) {
-                    placeholder.style.height = msg.image_height + 'px';
-                }
+            if (!chatContainer.querySelector(`.message[data-id="${msg.sort_key}"]`)) {
+                const messageElement = createMessageElement(msg, !!msg.image);
+                scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
             }
-            scrollAnchor.insertAdjacentElement('beforebegin', messageElement);
         });
         
         const allMessages = chatContainer.querySelectorAll('.message');
@@ -735,11 +704,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 创建消息元素
-    // 创建消息元素
     function createMessageElement(msg, imagePlaceholder = false) {
         const div = document.createElement('div');
         div.className = 'message';
         div.setAttribute('data-id', msg.sort_key);
+
+        // 时间戳单位修正
+        let timestamp = msg.sort_key;
+        if (timestamp > 9999999999) { // 如果是毫秒
+            timestamp = Math.floor(timestamp / 1000);
+        }
         
         // 获取消息日期和时间
         const msgDate = new Date(msg.sort_key * 1000); // 乘以1000转换为毫秒
@@ -836,6 +810,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 处理图片显示
         if (msg.image) {
+            let imageUrl = msg.image_url || '';
+            if (!imageUrl && msg.image) {
+                imageUrl = '/image/' + msg.image;
+            }
             if (imagePlaceholder) {
                 // 创建图片占位符
                 const placeholder = document.createElement('div');
@@ -882,31 +860,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // 删除消息
     function deleteMessage(messageId) {
         if (!confirm('确定要撤回这条消息吗？')) return;
-        
-        fetch('/message/delete', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message_id: messageId,
-                ip: userIP
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const messageElement = document.querySelector(`.message[data-id="${messageId}"]`);
-                if (messageElement) {
-                    messageElement.remove();
-                }
-            } else {
-                showError(data.message || '撤回消息失败');
-            }
-        })
-        .catch(error => {
-            console.error('撤回消息出错:', error);
-            showError('撤回消息时出错');
+        socket.emit('delete_message', {
+            message_id: messageId,
+            ip: userIP
         });
     }
     
@@ -999,27 +955,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     HighlightUI();
 
-    fetch('/config/get_config')  // 先获取配置
+    socket.on('history', function(messages) {
+    renderMessages(messages, true);
+    });
+
+    fetch('/config/get_config')
     .then(response => response.json())
     .then(config => {
         adminIps = config.admin_ips || [];
         blockedIps = config.blocked_ips || [];
-        
-        // 然后获取用户IP
-        fetch('/message/get')
-        .then(response => response.json())
-        .then(data => {
-            if (data.messages && Array.isArray(data.messages) && data.messages.length > 0) {
-                userIP = data.messages[0].ip || '';
-            }
-            
-            // 最后初始化消息获取
-            fetchMessages(true);
-            fetchHighlights();
-            setInterval(() => fetchMessages(), 5000);
-        });
+        // 不再通过HTTP获取消息和IP
+        // userIP 会通过 socketio 的 user_ip 事件获取
+        // 消息会通过 socketio 的 history/new_message 事件获取
+        fetchHighlights();
     })
     .catch(error => {
         console.error('初始化失败:', error);
-    });
+});
 });

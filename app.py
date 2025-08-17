@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, abort
+from flask_socketio import SocketIO, emit
 from apscheduler.schedulers.background import BackgroundScheduler
 import base64,time,json,re,os,uuid,threading,requests,smtplib,sys
 import http.client
@@ -8,7 +9,7 @@ from openai import OpenAI
 from bs4 import BeautifulSoup
 
 app = Flask(__name__) # 创建 Flask 应用
-
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 # 存储路径定义
 HIGHLIGHTS_FILE = './data/highlights.json'
@@ -317,8 +318,125 @@ class File:
 
 class Message:
     """消息相关函数"""
+
     def __init__(self):
         pass
+    
+    @staticmethod
+    @socketio.on('send_message')
+    def handle_send_message(data):
+        """处理发送消息的SocketIO事件"""
+        global chat_history, history_lock, config_values
+        try:
+            username = data.get('username', '匿名').strip()
+            message = data.get('message', '').strip()
+            user_ip = API.get_client_ip()
+            blocked_ips = config_values.get('blocked_ips', [])
+            if user_ip in blocked_ips:
+                emit('error', {'message': '您的IP已被限制发言'})
+                return
+
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            timestamp_sort = datetime.now().timestamp()
+            image_filename = None
+
+            # 处理 base64 图片
+            image_data = data.get('image')
+            if image_data:
+                try:
+                    header, encoded = image_data.split(',', 1)
+                    img_bytes = base64.b64decode(encoded)
+                    if len(img_bytes) > 10 * 1024 * 1024:
+                        emit('error', {'message': '图片大小不能超过10MB'})
+                        return
+                    ext = 'png' if 'png' in header else 'jpg'
+                    image_filename = f"{uuid.uuid4().hex}.{ext}"
+                    file_path = os.path.join(IMAGE_STORAGE_PATH, image_filename)
+                    with open(file_path, 'wb') as f:
+                        f.write(img_bytes)
+                except Exception as e:
+                    app.logger.error(f"图片保存失败: {str(e)}")
+                    image_filename = None
+
+            if not message and not image_filename:
+                emit('error', {'message': '消息内容不能为空'})
+                return
+
+            location = API.get_ip_location(user_ip)
+            message_obj = {
+                'username': username,
+                'ip': user_ip,
+                'message': message,
+                'image': image_filename,
+                'image_url': f"/image/{image_filename}" if image_filename else None,
+                'timestamp': timestamp,
+                'sort_key': timestamp_sort,
+                'location': location
+            }
+
+            with history_lock:
+                chat_history.append(message_obj)
+                Message.save_messages()
+                if len(chat_history) > 300:
+                    removed_message = chat_history.pop(0)
+                    # 图片删除略
+                    Message.save_messages()
+
+            emit('new_message', message_obj, broadcast=True)
+        except Exception as e:
+            emit('error', {'message': f'服务器错误: {str(e)}'})
+
+    @socketio.on('connect')
+    def handle_connect():
+        user_ip = API.get_client_ip()
+        emit('user_ip', user_ip)
+        # 推送最近50条历史消息
+        with history_lock:
+            sorted_history = sorted(chat_history, key=lambda x: x['sort_key'])
+            emit('history', sorted_history[-50:])
+
+    @socketio.on('delete_message')
+    def handle_delete_message(data):
+        message_id = data.get('message_id')
+        user_ip = API.get_client_ip()
+        admin = config_values.get('admin_ips', [])
+        with history_lock:
+            for i, msg in enumerate(chat_history):
+                if msg['sort_key'] == message_id:
+                    if (user_ip not in admin) and (user_ip != msg['ip']):
+                        emit('error', {'message': '无权删除此消息'})
+                        return
+                    if msg.get('image'):
+                        image_path = os.path.join(IMAGE_STORAGE_PATH, msg['image'])
+                        if os.path.exists(image_path):
+                            try:
+                                os.remove(image_path)
+                            except Exception as e:
+                                app.logger.error(f"删除图片文件失败: {str(e)}")
+                    del chat_history[i]
+                    Message.save_messages()
+                    emit('message_deleted', {'message_id': message_id}, broadcast=True)
+                    return
+        emit('error', {'message': '消息不存在'})
+
+    @socketio.on('toggle_highlight')
+    def handle_toggle_highlight(data):
+        message_id = data.get('message_id')
+        user_ip = API.get_client_ip()
+        with history_lock:
+            is_highlighted = any(h['sort_key'] == message_id for h in highlights)
+            if is_highlighted:
+                highlights[:] = [h for h in highlights if h['sort_key'] != message_id]
+            else:
+                for msg in chat_history:
+                    if msg['sort_key'] == message_id:
+                        highlight_msg = msg.copy()
+                        highlight_msg['highlighted_at'] = datetime.now().timestamp()
+                        highlights.append(highlight_msg)
+                        break
+            Message.save_highlights()
+            Message.save_messages()
+            emit('highlight_toggled', {'message_id': message_id, 'is_highlighted': not is_highlighted}, broadcast=True)
 
     @app.route('/message/send', methods=['POST'])
     def send():
@@ -835,5 +953,5 @@ if __name__ == '__main__':
     chat_history = Message.load_messages() # 初始化时加载聊天记录 
     Config.load_config_vars() # 初始化时加载配置变量
     app.logger.info(f"初始配置: {config_values}") # 初始化时打印配置
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
     scheduler.shutdown()# 应用退出时关闭调度器

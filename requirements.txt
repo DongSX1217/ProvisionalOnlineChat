@@ -4,3 +4,4 @@ requests
 openai
 bs4
 flask-socketio
+eventlet
