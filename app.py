@@ -346,8 +346,8 @@ class Message:
                 try:
                     header, encoded = image_data.split(',', 1)
                     img_bytes = base64.b64decode(encoded)
-                    if len(img_bytes) > 10 * 1024 * 1024:
-                        emit('error', {'message': '图片大小不能超过10MB'})
+                    if len(img_bytes) > 20 * 1024 * 1024:
+                        emit('error', {'message': '图片大小不能超过20MB'})
                         return
                     ext = 'png' if 'png' in header else 'jpg'
                     image_filename = f"{uuid.uuid4().hex}.{ext}"
@@ -466,8 +466,8 @@ class Message:
                     file_length = file.tell()
                     file.seek(0)
                     
-                    if file_length > 10 * 1024 * 1024:  # 限制10MB
-                        return jsonify({'status': 'error', 'message': '图片大小不能超过10MB'}), 400
+                    if file_length > 20 * 1024 * 1024:  # 限制20MB
+                        return jsonify({'status': 'error', 'message': '图片大小不能超过20MB'}), 400
                     
                     # 保存图片到服务器本地
                     file_extension = file.filename.rsplit('.', 1)[1].lower()

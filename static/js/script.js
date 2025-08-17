@@ -146,8 +146,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         showError('只支持JPEG、PNG或GIF格式的图片');
                         return;
                     }
-                    if (file.size > 10 * 1024 * 1024) {
-                        showError('图片大小不能超过10MB');
+                    if (file.size > 20 * 1024 * 1024) {
+                        showError('图片大小不能超过20MB');
                         return;
                     }
                     // 预览图片
@@ -390,8 +390,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 检查文件大小
-        if (file.size > 10 * 1024 * 1024) {
-            showError('图片大小不能超过10MB');
+        if (file.size > 20 * 1024 * 1024) {
+            showError('图片大小不能超过20MB');
             return;
         }
         
