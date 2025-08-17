@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, abort
+from apscheduler.schedulers.background import BackgroundScheduler
 import base64,time,json,re,os,uuid,threading,requests,smtplib
 import http.client
 from datetime import datetime
@@ -65,6 +66,11 @@ CONFIG_VARS = {
         'description': "AI的System参数",
         'type': 'string'
     },
+    'get_news_time':{
+        'default': 300,  # 默认每5分钟获取一次新闻
+        'description': "获取新闻的时间间隔（单位：秒）",
+        'type': 'integer'
+    }
 }
 
 # 当前配置变量值
@@ -767,6 +773,47 @@ image_api = File()
 message = Message()
 config = Config()
 
+def get_news():
+    try:
+        try:
+            with open('./data/news.json', 'r', encoding='utf-8') as f:
+                news_data = json.load(f)
+        except FileNotFoundError:
+            news_data = {}
+        page = requests.get("http://news.cn/")
+        soup = BeautifulSoup(page.content, 'html.parser')
+        w = soup.find_all(class_="part bg-white")[0]
+        links = {a['href']: a.get_text() for a in w.find_all('a') if 'href' in a.attrs}
+        if news_data != links: # 如果新闻内容有变化，则更新
+            text = "新华网头条新闻有更新，最新内容为："
+            for link in links:
+                text+= f"\n[{links[link]}]({link})"
+            text += "\n以上内容均来自新华网。"
+            message = {
+            'username': '新闻助手（定时发送）',
+            'ip': '127.0.0.1',
+            'message': text,
+            'image': None,
+            'timestamp': datetime.now().strftime("%H:%M:%S"),
+            'sort_key': datetime.now().timestamp(),
+            'location': '本地'
+            }
+            chat_history.append(message)
+            Message.save_messages()  # 保存操作
+            with open('./data/news.json', 'w', encoding='utf-8') as f:
+                json.dump(links, f, ensure_ascii=False, indent=4)
+            print("news成功")
+            return "news: 定时发送新闻更新情况成功", 200
+        else:
+            pass
+    except Exception as e:
+        app.logger.error(f"(定时)获取新闻失败: {str(e)}")
+        return "news: failed", 500
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(get_news, 'interval', seconds=config_values.get('get_news_time', 300))
+scheduler.start()
+
 if __name__ == '__main__':
     Path('./data').mkdir(exist_ok=True) # 确保数据目录存在
     Path(IMAGE_STORAGE_PATH).mkdir(exist_ok=True)  # 创建图片存储目录
@@ -774,3 +821,4 @@ if __name__ == '__main__':
     Config.load_config_vars() # 初始化时加载配置变量
     app.logger.info(f"初始配置: {config_values}") # 初始化时打印配置
     app.run(host='0.0.0.0', port=5000, debug=True)
+    scheduler.shutdown()# 应用退出时关闭调度器
