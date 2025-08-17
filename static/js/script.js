@@ -445,46 +445,38 @@ document.addEventListener('DOMContentLoaded', function() {
         const imagePlaceholders = document.querySelectorAll('.image-placeholder');
         let loadedCount = 0;
         const totalCount = imagePlaceholders.length;
-        
-        // 判断是否是初次加载（页面刚打开时）
         const isFirstLoad = lastMessageId === 0;
-        
+
         if (totalCount === 0) {
             return;
         }
-        
+
         imagePlaceholders.forEach(placeholder => {
             const messageId = placeholder.getAttribute('data-message-id');
             const imageUrl = placeholder.getAttribute('data-image-url');
-            
+
             if (imageUrl) {
                 const img = document.createElement('img');
                 img.src = imageUrl;
                 img.alt = '图片';
                 img.className = 'message-image';
-                img.style.display = 'none'; // 先隐藏，加载完成后再显示
-                
+                // 保持高度与占位符一致
+                img.style.height = placeholder.style.height;
+
                 img.onload = function() {
-                    // 图片加载完成后替换占位符
                     placeholder.parentNode.replaceChild(img, placeholder);
                     img.style.display = 'block';
-                    
-                    // 图片加载完成后，如果是初次加载，再次滚动到底部
                     loadedCount++;
                     if (isFirstLoad && loadedCount === totalCount) {
-                        // 所有图片加载完成后，延迟一点时间再滚动到底部
                         setTimeout(() => {
                             scrollToBottomSmooth();
                         }, 100);
                     }
                 };
-                
+
                 img.onerror = function() {
-                    // 图片加载失败，显示错误信息
                     placeholder.innerHTML = '图片加载失败';
                     placeholder.style.backgroundColor = '#fcc';
-                    
-                    // 图片加载失败时也检查是否需要滚动到底部
                     loadedCount++;
                     if (isFirstLoad && loadedCount === totalCount) {
                         setTimeout(() => {
@@ -819,7 +811,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'image-placeholder';
                 placeholder.setAttribute('data-message-id', msg.sort_key);
-                placeholder.setAttribute('data-image-url', msg.image_url || '');
+                placeholder.setAttribute('data-image-url', imageUrl);
+
+                // 设置占位符高度为图片真实高度
+                if (msg.image_height) {
+                    placeholder.style.height = msg.image_height + 'px';
+                } else {
+                    placeholder.style.height = '180px'; // 默认高度
+                }
                 placeholder.style.backgroundColor = '#eee';
                 placeholder.style.padding = '20px';
                 placeholder.style.textAlign = 'center';
@@ -829,12 +828,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 placeholder.style.fontSize = '14px';
                 placeholder.textContent = '正在加载中...';
                 div.appendChild(placeholder);
-            } else if (msg.image_url) {
-                // 直接显示图片
+            } else if (imageUrl) {
                 const img = document.createElement('img');
-                img.src = msg.image_url;
+                img.src = imageUrl;
                 img.alt = '图片';
                 img.className = 'message-image';
+                if (msg.image_height) img.style.height = msg.image_height + 'px';
                 div.appendChild(img);
             }
         }
