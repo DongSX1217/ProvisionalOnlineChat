@@ -1,0 +1,16 @@
+flask
+apscheduler
+base64
+time
+json
+uuid
+threading
+requests
+smtplib
+sys
+http.client
+datetime
+pathlib
+openai
+bs4
+flask-socketio
