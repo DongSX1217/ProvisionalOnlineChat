@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded and parsed');
     const socket = io();
 
+    let firstConnect = true;
+
      // 连接 WebSocket，获取用户IP和历史消息
     socket.on('connect', function() {
         console.log('WebSocket已连接');
@@ -16,20 +18,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 服务端推送历史消息
     socket.on('history', function(messages) {
-        // 初始化 lastMessageId
-        if (messages.length > 0) {
-            lastMessageId = Math.max(...messages.map(msg => msg.sort_key));
-        }
         renderMessages(messages, true);
         fetchHighlights();
     });
 
     // 服务端推送新消息
     socket.on('new_message', function(msg) {
-        // 更新 lastMessageId
-        if (msg.sort_key > lastMessageId) {
-            lastMessageId = msg.sort_key;
-        }
         renderMessages([msg], true);
         sendNotification('新消息', msg.username + ': ' + msg.message);
     });
@@ -44,14 +38,21 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchHighlights();
     });
 
-    // 断线重连处理
+    // 连接 WebSocket
+    socket.on('connect', function() {
+        if (firstConnect) {
+            console.log('WebSocket已连接');
+            firstConnect = false;
+            // 首次连接只做初始化，不提示“已重新连接”，也不 emit request_history
+        } else {
+            showError('已重新连接');
+            // 如果服务端有 request_history 事件，这里可以 emit
+            // socket.emit('request_history');
+        }
+    });
+
     socket.on('disconnect', function() {
         showError('连接已断开，正在尝试重连...');
-    });
-    socket.on('connect', function() {
-        showError('已重新连接');
-        // 重新获取历史消息
-        socket.emit('request_history');
     });
     
     // ==================== 初始化变量 ====================
