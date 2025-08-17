@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, abort
 from apscheduler.schedulers.background import BackgroundScheduler
-import base64,time,json,re,os,uuid,threading,requests,smtplib
+import base64,time,json,re,os,uuid,threading,requests,smtplib,sys
 import http.client
 from datetime import datetime
 from pathlib import Path
@@ -159,6 +159,15 @@ class Pages:
         w = soup.find_all(class_="part bg-white")[0]
         m = [(a['href'], a.get_text()) for a in w.find_all('a') if 'href' in a.attrs]
         return render_template('news.html',w=w,links=m)
+    
+    @app.route('/restart/<password>')
+    def restart_app(password):
+        """重启 Flask 应用（开发环境用）"""
+        global SECRET_PASSWORD
+        if password != SECRET_PASSWORD:
+            return jsonify({'status': 'error', 'message': '密码错误，无法重启！'}), 403
+        threading.Thread(target=_restart_server).start()
+        return jsonify({'status': 'success', 'message': '正在重启，请稍候...'})
     
 class API:
     @staticmethod
@@ -772,6 +781,12 @@ api = API()
 image_api = File()
 message = Message()
 config = Config()
+
+def _restart_server():
+    """重启进程"""
+    time.sleep(1)
+    os.execv(sys.executable, [sys.executable] + sys.argv) # 重启当前进程
+
 
 def get_news():
     try:
