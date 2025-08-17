@@ -67,9 +67,9 @@ CONFIG_VARS = {
         'type': 'string'
     },
     'get_news_time':{
-        'default': 300,  # 默认每5分钟获取一次新闻
+        'default': '300',  # 默认每5分钟获取一次新闻
         'description': "获取新闻的时间间隔（单位：秒）",
-        'type': 'integer'
+        'type': 'string'
     }
 }
 
@@ -826,7 +826,7 @@ def get_news():
         return "news: failed", 500
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(get_news, 'interval', seconds=config_values.get('get_news_time', 300))
+scheduler.add_job(get_news, 'interval', seconds=int(config_values.get('get_news_time', '300')))
 scheduler.start()
 
 if __name__ == '__main__':
