@@ -164,10 +164,24 @@ class API:
             soup = BeautifulSoup(page.content, 'html.parser')
             w = soup.find_all(class_="part bg-white")[0]
             links = {a['href']: a.get_text() for a in w.find_all('a') if 'href' in a.attrs}
-            return jsonify({'status': 'success', 'links': links})
+            text = "以下为新华网头条新闻："
+            for link in links:
+                text+= f"\n[{links[link]}]({link})"
+            message = {
+            'username': '新闻助手',
+            'ip': '127.0.0.1',
+            'message': text,
+            'image': None,
+            'timestamp': datetime.now().strftime("%H:%M:%S"),
+            'sort_key': datetime.now().timestamp(),
+            'location': '本地'
+            }
+            chat_history.append(message)
+            Message.save_messages()  # 保存操作
+            return "news: accepted", 200
         except Exception as e:
             app.logger.error(f"获取新闻失败: {str(e)}")
-            return jsonify({'status': 'error', 'message': f'获取新闻失败: {str(e)}'}), 500
+            return "news: failed", 500
 
     @staticmethod
     @app.route('/api/ai_chat/<message_text>')
@@ -183,7 +197,7 @@ class API:
             'location': '本地'
         }
         chat_history.append(ai_message)
-        Message.save_messages()  # 新增保存操作
+        Message.save_messages()  # 保存操作
     
     @app.route('/api/check_password', methods=['POST'])
     def check_password():
@@ -351,6 +365,8 @@ class Message:
                 Message.save_messages() 
                 if "@ai" in message:
                     threading.Thread(target=API.api_ai, args=(message,)).start()
+                elif "@news" in message:
+                    threading.Thread(target=API.api_news).start()
                 # 保持只保留最近的300条消息
                 if len(chat_history) > 300:
                     # 删除超出300条的最早消息中的图片文件
