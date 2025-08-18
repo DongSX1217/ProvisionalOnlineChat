@@ -287,10 +287,9 @@ document.addEventListener('DOMContentLoaded', function() {
         highlightBtn.title = msg.is_highlighted ? '移出精华' : '设为精华';
         highlightBtn.innerHTML = msg.is_highlighted ? '⭐' : '☆';
         
-        // 添加一次性事件监听
-        highlightBtn.addEventListener('click', function handler() {
-            toggleHighlightStatus(msg.sort_key);
-            this.removeEventListener('click', handler); // 点击后移除监听
+        // 绑定点击事件
+        highlightBtn.addEventListener('click', function () {
+            toggleHighlightStatus(msg.sort_key, highlightBtn);
         });
         
         // 添加到删除按钮左侧
@@ -301,11 +300,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 切换精华状态
-    function toggleHighlightStatus(messageId) {
+    function toggleHighlightStatus(messageId, button) {
         socket.emit('toggle_highlight', {
             message_id: messageId,
             ip: userIP
         });
+        // 更新按钮状态
+        button.innerHTML = button.innerHTML === '⭐' ? '☆' : '⭐';
+        button.title = button.title === '移出精华' ? '设为精华' : '移出精华';
     }
 
     // 显示精华消息弹窗
