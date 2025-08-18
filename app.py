@@ -384,6 +384,8 @@ class Message:
             
             socketio.emit('new_message', message_obj, namespace='/')  # 广播新消息给所有连接的客户端
 
+            emit('new_message', message_obj, namespace='/', room=request.sid)  # 仅发送给当前用户
+
             # 异步处理 @ai 和 @news 指令
             if "@ai" in message:
                 def send_ai():
@@ -694,6 +696,7 @@ def _restart_server():
 
 def get_news():
     """定时获取新闻并推送"""
+    print("定时获取新闻任务开始")
     try:
         # 加载之前的新闻数据
         try:
@@ -730,7 +733,8 @@ def get_news():
                 json.dump(news_latest, f, ensure_ascii=False, indent=4)
 
             # 实时推送新闻消息给所有在线用户
-            socketio.emit('new_message', message, namespace='/')  # 修复：直接使用 emit 推送消息
+            socketio.emit('new_message', message, namespace='/')  # 直接使用 emit 推送消息
+            print("定时新闻推送成功")
             app.logger.info("定时新闻推送成功")
 
         else:
@@ -742,7 +746,7 @@ def get_news():
 # 调度器配置
 Config.load_config_vars()  # 初始化时加载配置变量
 scheduler = BackgroundScheduler()
-scheduler.add_job(lambda: socketio.start_background_task(get_news), 'interval', seconds=int(config_values.get('get_news_time', '300')))
+scheduler.add_job(lambda: socketio.start_background_task(get_news), 'interval', seconds=int(config_values.get('get_news_time', '300')))# 每n秒获取一次新闻
 scheduler.start()
 
 if __name__ == '__main__':
