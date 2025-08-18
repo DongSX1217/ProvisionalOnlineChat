@@ -5,7 +5,7 @@ def get_xinhuanet(lists=3):
     if lists not in [1, 2, 3]:
         return "lists参数错误，请输入1、2或3。"
     
-    url = ("https://news.cn/")
+    url = ("http://news.cn/")
     try:
         with urlopen(url) as response:
             html_content = response.read().decode('utf-8')
