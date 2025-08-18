@@ -10,7 +10,7 @@ def get_xinhuanet(lists=3):
         with urlopen(url) as response:
             html_content = response.read().decode('utf-8')
     except Exception as e:
-        print(f"请求失败: {e}")
+        return f"请求失败: {e}"
 
     # 创建BeautifulSoup对象
     soup = BeautifulSoup(html_content, 'html.parser')
