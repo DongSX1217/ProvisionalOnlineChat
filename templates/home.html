@@ -1,51 +1,249 @@
 <!DOCTYPE html>
-<head> 
-    <title>Home</title>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网站首页</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h1 {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
             color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
         }
-        button {
-            margin: 10px;
-            padding: 10px 15px; 
-            font-size: 300%;
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
-
-        p {
-            font-size: 120%;
+        
+        header {
+            background: linear-gradient(to right, #2c3e50, #4a6582);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 15px 15px 0 0;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .header-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.85;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .welcome-card h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 15px;
+        }
+        
+        .welcome-card p {
+            font-size: 1.15rem;
+            color: #555;
+            margin-bottom: 15px;
+            line-height: 1.7;
+        }
+        
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            background: linear-gradient(to right, #4a6582, #5b7b9d);
+            color: white;
+            border: none;
+            padding: 25px;
+            border-radius: 12px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 100%;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(to right, #5b7b9d, #6c8db0);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .friendship-card {
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            border-left: 5px solid #4a6582;
+        }
+        
+        .friendship-card p {
+            font-size: 1.1rem;
+            color: #444;
+        }
+        
+        .friendship-card a {
+            color: #4a6582;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        
+        .friendship-card a:hover {
+            color: #2c3e50;
+            text-decoration: underline;
+        }
+        
+        .agreement-card h3 {
+            color: #2c3e50;
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .agreement-card p {
+            margin-bottom: 15px;
+            font-size: 1.05rem;
+            color: #444;
+            padding-left: 15px;
+            border-left: 3px solid #eaeaea;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.95rem;
+            border-top: 1px solid #eaeaea;
+        }
+        
+        .notification {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #eaeaea;
+            font-size: 1.1rem;
+            color: #5b7b9d;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                padding: 25px 20px;
+            }
+            
+            .btn {
+                font-size: 1.5rem;
+                padding: 20px;
+            }
         }
     </style>
 </head>
-<body> 
-    <h1>Home</h1>
-    <p>This is the home page.</p>
-    <button id="chat">聊天页面</button>
-    <button id="manage">管理页面</button>
-    <button id="log">操作日志</button>
-    <p> 更多页面正在开发中，敬请期待！</p>
-    <br>
-    <p>友情链接：<a href="https://www.ip9.com.cn"> 免费IP归属地查询API </a></p>
+<body>
+    <div class="container">
+        <header>
+            <h1>欢迎访问我们的平台</h1>
+            <p class="header-subtitle">安全、稳定、高效的服务体验</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="card welcome-card">
+                <h2>首页介绍</h2>
+                <p>欢迎访问我们的网站，这里提供多种功能服务。当前平台处于测试开发阶段，我们正在努力完善各项功能，为您提供更好的服务体验。</p>
+                <p>请选择您需要的功能模块：</p>
+                
+                <div class="button-grid">
+                    <button id="chat" class="btn">聊天页面</button>
+                    <button id="manage" class="btn">管理页面</button>
+                    <button id="log" class="btn">操作日志</button>
+                </div>
+                
+                <div class="notification">
+                    更多页面正在开发中，敬请期待！
+                </div>
+            </div>
+            
+            <div class="card friendship-card">
+                <p>友情链接：<a href="https://www.ip9.com.cn">免费IP归属地查询API</a></p>
+            </div>
+            
+            <div class="card agreement-card">
+                <h3>用户使用须知和协议</h3>
+                <p>1. 本网站目前正在测试开发中，尚未申请相关备案，故暂不公开也不允许公开相关链接、IP地址。</p>
+                <p>2. 严禁恶意攻击本网站的服务器。如有相关行为，我们将联系警方处理。</p>
+                <p>3. 本网站禁止被用于非法用途，禁止在聊天室内发布违反有关法律法规的内容。严禁发布反党反社会主义的内容，严禁恶意营造恐慌情绪、未经允许非法组织集会、游行等活动、抹黑党和国家的形象、造谣污蔑领导干部。如有发现违法违规内容，网站开发方将采取措施紧急处理相关言论，并封禁违规的IP地址。</p>
+                <p>4. 如遇侵犯您权益的内容，请联系网站开发方。我们将在8个自然日内依法依规处理相关违规言论，并协助您保留相关证据，以便后续您的维权。邮箱：bright2024_2035@163.com</p>
+                <p>5. 本网站随时可能暂时关闭。这可能是测试需要，也可能是紧急处理相关严重违法犯罪内容的需要，也可能是国家有关机关工作需要，请谅解。</p>
+                <p>6. 本网站将会把您发送的消息存储到服务器，直到300条新的消息生成。我们承诺不会将您的IP地址、消息内容等信息用于其他非法用途。您对您的消息拥有著作权等权利。</p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2025 测试网站 | 当前版本：测试版 0.4.1.2(beta) </p>
+        </footer>
+    </div>
+    
     <script>
         document.getElementById("chat").addEventListener("click", function() {
             window.location.href = "/chat";
         });
+        
         document.getElementById("manage").addEventListener("click", function() {
             window.location.href = "/manage";
         });
+        
         document.getElementById("log").addEventListener("click", function() {
             window.location.href = "/log";
         });
     </script>
-    <br>
-    <h3>用户使用须知和协议</h3>
-    <p>1.本网站目前正在测试开发中，尚未申请相关备案，故暂不公开也不允许公开相关链接、IP地址。</p>
-    <p>2.严禁恶意攻击本网站的服务器。如有相关行为，我们将联系警方处理。</p>
-    <p>3.本网站禁止被用于非法用途，禁止在聊天室内发布违反有关法律法规的内容。严禁发布反党反社会主义的内容，严禁恶意营造恐慌情绪、未经允许非法组织集会、游行等活动、抹黑党和国家的形象、造谣污蔑领导干部。如有发现违法违规内容，网站开发方将采取措施紧急处理相关言论，并封禁违规的IP地址。</p>
-    <p>4.如遇侵犯您权益的内容，请联系网站开发方。我们将在8个自然日内依法依规处理相关违规言论，并协助您保留相关证据，以便后续您的维权。邮箱：bright2024_2035@163.com</p>
-    <p>5.本网站随时可能暂时关闭。这可能是测试需要，也可能是紧急处理相关严重违法犯罪内容的需要，也可能是国家有关机关工作需要，请谅解。</p>
-    <p>6.本网站将会把您发送的消息存储到服务器，直到300条新的消息生成。我们承诺不会将您的IP地址、消息内容等信息用于其他非法用途。您对您的消息拥有著作权等权利。</p>
 </body>
+</html>
