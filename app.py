@@ -172,9 +172,9 @@ class Pages:
     
 class API:
     @staticmethod
-    @app.route('/api/news')
-    def api_news():
-        """API接口获取新闻"""
+    def get_news_message():
+        """获取新闻消息内容，返回消息对象"""
+        time.sleep(2)
         try:
             page = requests.get("http://news.cn/")
             soup = BeautifulSoup(page.content, 'html.parser')
@@ -182,26 +182,32 @@ class API:
             links = {a['href']: a.get_text() for a in w.find_all('a') if 'href' in a.attrs}
             text = "以下为新华网头条新闻："
             for link in links:
-                text+= f"\n[{links[link]}]({link})"
+                text += f"\n[{links[link]}]({link})"
             message = {
-            'username': '新闻助手',
-            'ip': '127.0.0.1',
-            'message': text,
-            'image': None,
-            'timestamp': datetime.now().strftime("%H:%M:%S"),
-            'sort_key': datetime.now().timestamp(),
-            'location': '本地'
+                'username': '新闻助手',
+                'ip': '127.0.0.1',
+                'message': text,
+                'image': None,
+                'timestamp': datetime.now().strftime("%H:%M:%S"),
+                'sort_key': datetime.now().timestamp(),
+                'location': '本地'
             }
-            chat_history.append(message)
-            Message.save_messages()  # 保存操作
-            return "news: accepted", 200
+            return message
         except Exception as e:
             app.logger.error(f"获取新闻失败: {str(e)}")
-            return "news: failed", 500
+            return {
+                'username': '新闻助手',
+                'ip': '127.0.0.1',
+                'message': f"新闻获取失败: {e}",
+                'image': None,
+                'timestamp': datetime.now().strftime("%H:%M:%S"),
+                'sort_key': datetime.now().timestamp(),
+                'location': '本地'
+            }
 
     @staticmethod
-    @app.route('/api/ai_chat/<message_text>')
-    def api_ai(message_text):
+    def get_ai_message(message_text):
+        """获取AI回复消息内容，返回消息对象"""
         result = AIChat(message_text=message_text.replace("@ai", ""))
         ai_message = {
             'username': 'AI助手',
@@ -212,8 +218,7 @@ class API:
             'sort_key': datetime.now().timestamp(),
             'location': '本地'
         }
-        chat_history.append(ai_message)
-        Message.save_messages()  # 保存操作
+        return ai_message
     
     @app.route('/api/check_password', methods=['POST'])
     def check_password():
@@ -380,9 +385,27 @@ class Message:
                 if len(chat_history) > 300:
                     removed_message = chat_history.pop(0)
                     # 图片删除略
-                    Message.save_messages()
+                    Message.save_messages()            
+            
+            socketio.emit('new_message', message_obj, namespace='/')  # 广播新消息给所有连接的客户端
 
-            emit('new_message', message_obj, broadcast=True)
+            # 异步处理 @ai 和 @news 指令
+            if "@ai" in message:
+                def send_ai():
+                    ai_msg = API.get_ai_message(message)  # 获取AI消息
+                    with history_lock:
+                        chat_history.append(ai_msg)
+                        Message.save_messages()
+                    socketio.emit('new_message', ai_msg, namespace='/')  # 实时推送AI消息
+                socketio.start_background_task(send_ai)  # 使用 Flask-SocketIO 的后台任务
+            elif "@news" in message:
+                def send_news():
+                    news_msg = API.get_news_message()  # 获取新闻消息
+                    with history_lock:
+                        chat_history.append(news_msg)
+                        Message.save_messages()
+                    socketio.emit('new_message', news_msg, namespace='/')  # 实时推送新闻消息
+                socketio.start_background_task(send_news)  # 使用 Flask-SocketIO 的后台任务        
         except Exception as e:
             emit('error', {'message': f'服务器错误: {str(e)}'})
 
@@ -437,87 +460,6 @@ class Message:
             Message.save_highlights()
             Message.save_messages()
             emit('highlight_toggled', {'message_id': message_id, 'is_highlighted': not is_highlighted}, broadcast=True)
-
-    @app.route('/message/send', methods=['POST'])
-    def send():
-        """处理消息发送请求"""
-        try:
-            # 获取用户提交的数据
-            username = request.form.get('username', '匿名').strip() # 获取用户名，默认为匿名
-            message = request.form.get('message', '').strip() # 获取消息内容
-            user_ip = API.get_client_ip() # 获取用户IP地址
-
-            # 检查是否在限制发言名单中
-            blocked_ips = config_values.get('blocked_ips', [])
-            if user_ip in blocked_ips:
-                return jsonify({'status': 'error', 'message': '您的IP已被限制发言'}), 403
-            
-            # 获取当前时间
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            timestamp_sort = datetime.now().timestamp()  # 用于排序的时间戳
-            
-            # 处理图片上传
-            image_filename = None
-            if 'image' in request.files:
-                file = request.files['image'] # 获取上传的文件
-                if file and File.check_image(file.filename):
-                    # 检查图片大小
-                    file.seek(0, os.SEEK_END)
-                    file_length = file.tell()
-                    file.seek(0)
-                    
-                    if file_length > 20 * 1024 * 1024:  # 限制20MB
-                        return jsonify({'status': 'error', 'message': '图片大小不能超过20MB'}), 400
-                    
-                    # 保存图片到服务器本地
-                    file_extension = file.filename.rsplit('.', 1)[1].lower()
-                    image_filename = f"{uuid.uuid4().hex}.{file_extension}"
-                    file_path = os.path.join(IMAGE_STORAGE_PATH, image_filename)
-                    file.save(file_path)
-            
-            # 如果既没有消息也没有图片，则返回错误
-            if not message and not image_filename:
-                return jsonify({'status': 'error', 'message': '消息内容不能为空'}), 400
-            
-            location = API.get_ip_location(user_ip )# 获取IP地理位置
-            
-            # 创建消息对象
-            message_obj = {
-                'username': username,
-                'ip': user_ip,
-                'message': message,
-                'image': image_filename,  # 只保存文件名，不保存base64数据
-                'timestamp': timestamp,
-                'sort_key': timestamp_sort,
-                'location': location  # 地理位置信息
-            }
-            
-            # 添加到聊天历史记录
-            with history_lock:
-                chat_history.append(message_obj)
-                Message.save_messages() 
-                if "@ai" in message:
-                    threading.Thread(target=API.api_ai, args=(message,)).start()
-                elif "@news" in message:
-                    threading.Thread(target=API.api_news).start()
-                # 保持只保留最近的300条消息
-                if len(chat_history) > 300:
-                    # 删除超出300条的最早消息中的图片文件
-                    removed_message = chat_history.pop(0)
-                    if removed_message.get('image'):
-                        image_path = os.path.join(IMAGE_STORAGE_PATH, removed_message['image'])
-                        if os.path.exists(image_path):
-                            try:
-                                os.remove(image_path)
-                            except Exception as e:
-                                app.logger.error(f"删除图片文件失败: {str(e)}")
-                    Message.save_messages()  # 新增保存操作
-            
-            return jsonify({'status': 'success'})
-        
-        except Exception as e:
-            app.logger.error(f"发送消息时出错: {str(e)}")
-            return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
 
     @app.route('/message/get')
     def get_message():
@@ -905,7 +847,6 @@ def _restart_server():
     time.sleep(1)
     os.execv(sys.executable, [sys.executable] + sys.argv) # 重启当前进程
 
-
 def get_news():
     try:
         try:
@@ -936,6 +877,8 @@ def get_news():
             with open('./data/news.json', 'w', encoding='utf-8') as f:
                 json.dump(links, f, ensure_ascii=False, indent=4)
             print("news成功")
+            # 新增：实时推送新闻消息给所有在线用户
+            socketio.emit('new_message', message)
             return "news: 定时发送新闻更新情况成功", 200
         else:
             pass
