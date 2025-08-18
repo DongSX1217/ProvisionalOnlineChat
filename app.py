@@ -852,23 +852,17 @@ def get_news():
     try:
         # 加载之前的新闻数据
         try:
-            with open('./data/news.json', 'r', encoding='utf-8') as f:
+            with open('./data/news.txt', 'r', encoding='utf-8') as f:
                 news_data = json.load(f)
         except FileNotFoundError:
-            news_data = {}
+            news_data = " "
 
         # 获取最新新闻内容
-        page = requests.get("http://news.cn/")
-        soup = BeautifulSoup(page.content, 'html.parser')
-        w = soup.find_all(class_="part bg-white")[0]
-        links = {a['href']: a.get_text() for a in w.find_all('a') if 'href' in a.attrs}
+        news_latest = get_xinhuanet.get_xinhuanet(lists=1)
 
         # 检测新闻内容是否有变化
-        if news_data != links:
-            text = "新华网头条新闻有更新，最新内容为："
-            for link in links:
-                text += f"\n[{links[link]}]({link})"
-            text += "\n以上内容均来自新华网。"
+        if news_data != news_latest:
+            text = "新华网头条新闻有更新，"+ news_latest
 
             # 构造消息对象
             message = {
@@ -887,8 +881,8 @@ def get_news():
                 Message.save_messages()
 
             # 保存最新新闻数据到文件
-            with open('./data/news.json', 'w', encoding='utf-8') as f:
-                json.dump(links, f, ensure_ascii=False, indent=4)
+            with open('./data/news.txt', 'w', encoding='utf-8') as f:
+                json.dump(news_latest, f, ensure_ascii=False, indent=4)
 
             # 实时推送新闻消息给所有在线用户
             socketio.emit('new_message', message, namespace='/')  # 修复：直接使用 emit 推送消息
