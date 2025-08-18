@@ -3,6 +3,7 @@ from flask_socketio import SocketIO, emit
 from apscheduler.schedulers.background import BackgroundScheduler
 import base64,time,json,re,os,uuid,threading,requests,smtplib,sys
 import http.client
+import get_xinhuanet
 from datetime import datetime
 from pathlib import Path
 from openai import OpenAI
@@ -172,17 +173,11 @@ class Pages:
     
 class API:
     @staticmethod
-    def get_news_message():
+    def get_news_message(lists=3):
         """获取新闻消息内容，返回消息对象"""
         time.sleep(2)
         try:
-            page = requests.get("http://news.cn/")
-            soup = BeautifulSoup(page.content, 'html.parser')
-            w = soup.find_all(class_="part bg-white")[0]
-            links = {a['href']: a.get_text() for a in w.find_all('a') if 'href' in a.attrs}
-            text = "以下为新华网头条新闻："
-            for link in links:
-                text += f"\n[{links[link]}]({link})"
+            text = get_xinhuanet.get_xinhuanet(lists=lists)  # 调用获取新闻的函数
             message = {
                 'username': '新闻助手',
                 'ip': '127.0.0.1',
@@ -399,8 +394,13 @@ class Message:
                     socketio.emit('new_message', ai_msg, namespace='/')  # 实时推送AI消息
                 socketio.start_background_task(send_ai)  # 使用 Flask-SocketIO 的后台任务
             elif "@news" in message:
+                lists=3
+                if "/1" in message:
+                    lists = 1
+                elif "/2" in message:
+                    lists = 2
                 def send_news():
-                    news_msg = API.get_news_message()  # 获取新闻消息
+                    news_msg = API.get_news_message(lists=lists)  # 获取新闻消息
                     with history_lock:
                         chat_history.append(news_msg)
                         Message.save_messages()
@@ -848,46 +848,62 @@ def _restart_server():
     os.execv(sys.executable, [sys.executable] + sys.argv) # 重启当前进程
 
 def get_news():
+    """定时获取新闻并推送"""
     try:
+        # 加载之前的新闻数据
         try:
             with open('./data/news.json', 'r', encoding='utf-8') as f:
                 news_data = json.load(f)
         except FileNotFoundError:
             news_data = {}
+
+        # 获取最新新闻内容
         page = requests.get("http://news.cn/")
         soup = BeautifulSoup(page.content, 'html.parser')
         w = soup.find_all(class_="part bg-white")[0]
         links = {a['href']: a.get_text() for a in w.find_all('a') if 'href' in a.attrs}
-        if news_data != links: # 如果新闻内容有变化，则更新
+
+        # 检测新闻内容是否有变化
+        if news_data != links:
             text = "新华网头条新闻有更新，最新内容为："
             for link in links:
-                text+= f"\n[{links[link]}]({link})"
+                text += f"\n[{links[link]}]({link})"
             text += "\n以上内容均来自新华网。"
+
+            # 构造消息对象
             message = {
-            'username': '新闻助手（定时发送）',
-            'ip': '127.0.0.1',
-            'message': text,
-            'image': None,
-            'timestamp': datetime.now().strftime("%H:%M:%S"),
-            'sort_key': datetime.now().timestamp(),
-            'location': '本地'
+                'username': '新闻助手（定时发送）',
+                'ip': '127.0.0.1',
+                'message': text,
+                'image': None,
+                'timestamp': datetime.now().strftime("%H:%M:%S"),
+                'sort_key': datetime.now().timestamp(),
+                'location': '本地'
             }
-            chat_history.append(message)
-            Message.save_messages()  # 保存操作
+
+            # 保存到聊天记录
+            with history_lock:
+                chat_history.append(message)
+                Message.save_messages()
+
+            # 保存最新新闻数据到文件
             with open('./data/news.json', 'w', encoding='utf-8') as f:
                 json.dump(links, f, ensure_ascii=False, indent=4)
-            print("news成功")
-            # 新增：实时推送新闻消息给所有在线用户
-            socketio.emit('new_message', message)
-            return "news: 定时发送新闻更新情况成功", 200
+
+            # 实时推送新闻消息给所有在线用户
+            socketio.emit('new_message', message, namespace='/')  # 修复：直接使用 emit 推送消息
+            app.logger.info("定时新闻推送成功")
+
         else:
-            pass
+            app.logger.info("新闻内容无变化，无需推送")
+
     except Exception as e:
         app.logger.error(f"(定时)获取新闻失败: {str(e)}")
-        return "news: failed", 500
 
+# 调度器配置
+Config.load_config_vars()  # 初始化时加载配置变量
 scheduler = BackgroundScheduler()
-scheduler.add_job(get_news, 'interval', seconds=int(config_values.get('get_news_time', '300')))
+scheduler.add_job(lambda: socketio.start_background_task(get_news), 'interval', seconds=int(config_values.get('get_news_time', '300')))
 scheduler.start()
 
 if __name__ == '__main__':

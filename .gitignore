@@ -4,3 +4,4 @@ mail.json
 test.py
 test2.py
 secrets.json
+*.pyc
