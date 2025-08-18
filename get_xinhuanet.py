@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
+import requests
 
 def get_xinhuanet(lists=3):
     if lists not in [1, 2, 3]:
@@ -7,9 +7,10 @@ def get_xinhuanet(lists=3):
     
     url = ("http://news.cn/")
     try:
-        with urlopen(url) as response:
-            html_content = response.read().decode('utf-8')
-    except Exception as e:
+        response = requests.get(url)
+        response.raise_for_status()  # 检查请求是否成功
+        html_content = response.text
+    except requests.exceptions.RequestException as e:
         return f"请求失败: {e}"
 
     # 创建BeautifulSoup对象
