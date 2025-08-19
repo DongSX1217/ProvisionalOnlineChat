@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>操作日志查看</title>
+    <style>
+        body {
+            font-family: '微软雅黑', Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+        h2 {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .search-bar {
+            margin: 10px auto;
+            width: 95%;
+            text-align: left;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .search-bar label {
+            font-size: 14px;
+            margin-right: 5px;
+        }
+        .search-bar select, .search-bar input {
+            padding: 5px;
+            font-size: 14px;
+            width: 100%;
+            max-width: 200px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 95%;
+            margin: 20px auto;
+            background: #fff;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #eee;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .pagination {
+            margin: 10px auto;
+            width: 95%;
+            text-align: center;
+        }
+        .pagination a {
+            margin: 0 5px;
+            text-decoration: none;
+            color: #007bff;
+            font-size: 14px;
+        }
+        .pagination b {
+            font-size: 14px;
+        }
+        @media screen and (max-width: 768px) {
+            table {
+                font-size: 12px;
+            }
+            th, td {
+                padding: 6px;
+            }
+            .search-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .search-bar select, .search-bar input {
+                max-width: 100%;
+            }
+        }
+        @media screen and (max-width: 480px) {
+            table {
+                font-size: 10px;
+            }
+            th, td {
+                padding: 4px;
+            }
+            .search-bar label {
+                font-size: 12px;
+            }
+            .search-bar select, .search-bar input {
+                font-size: 12px;
+            }
+            .pagination a, .pagination b {
+                font-size: 12px;
+            }
+        }
+    </style>
+    <script>
+        // 自动提交表单
+        function autoSubmit() {
+            document.getElementById('filter-form').submit();
+        }
+    </script>
+</head>
+<body>
+    <h2>操作日志</h2>
+    <div class="search-bar">
+        <form id="filter-form" method="get">
+            <label>日期范围：</label>
+            <select name="date_range" onchange="autoSubmit()">
+                <option value="1" {% if date_range == '1' %}selected{% endif %}>最近1天</option>
+                <option value="7" {% if date_range == '7' %}selected{% endif %}>最近7天</option>
+                <option value="30" {% if date_range == '30' %}selected{% endif %}>最近30天</option>
+                <option value="all" {% if date_range == 'all' %}selected{% endif %}>全部日期</option>
+            </select>
+            <label>操作IP：</label>
+            <select name="operator_ip" onchange="autoSubmit()">
+                <option value="">全部</option>
+                {% for ip in operator_ips %}
+                <option value="{{ ip }}" {% if operator_ip == ip %}selected{% endif %}>{{ ip }}</option>
+                {% endfor %}
+            </select>
+            <label>目标IP：</label>
+            <select name="target_ip" onchange="autoSubmit()">
+                <option value="">全部</option>
+                {% for ip in target_ips %}
+                <option value="{{ ip }}" {% if target_ip == ip %}selected{% endif %}>{{ ip }}</option>
+                {% endfor %}
+            </select>
+            <label>操作类型：</label>
+            <select name="action" onchange="autoSubmit()">
+                <option value="">全部</option>
+                {% for act in actions %}
+                <option value="{{ act }}" {% if action == act %}selected{% endif %}>{{ act }}</option>
+                {% endfor %}
+            </select>
+            <label>操作者属地：</label>
+            <select name="operator_location" onchange="autoSubmit()">
+                <option value="">全部</option>
+                {% for loc in operator_locations %}
+                <option value="{{ loc }}" {% if operator_location == loc %}selected{% endif %}>{{ loc }}</option>
+                {% endfor %}
+            </select>
+            <label>目标属地：</label>
+            <select name="target_location" onchange="autoSubmit()">
+                <option value="">全部</option>
+                {% for loc in target_locations %}
+                <option value="{{ loc }}" {% if target_location == loc %}selected{% endif %}>{{ loc }}</option>
+                {% endfor %}
+            </select>
+            <label>内容：</label>
+            <input type="text" name="content" value="{{ content }}" placeholder="内容" oninput="autoSubmit()">
+            <label>结果：</label>
+            <select name="result" onchange="autoSubmit()">
+                <option value="">全部</option>
+                {% for res in results %}
+                <option value="{{ res }}" {% if result == res %}selected{% endif %}>{{ res }}</option>
+                {% endfor %}
+            </select>
+            <label>级别：</label>
+            <select name="level" onchange="autoSubmit()">
+                <option value="">全部</option>
+                {% for lvl in levels %}
+                <option value="{{ lvl }}" {% if level == lvl %}selected{% endif %}>{{ lvl }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    <table>
+        <tr>
+            <th>时间</th>
+            <th>操作</th>
+            <th>操作者IP</th>
+            <th>操作者属地</th>
+            <th>目标IP</th>
+            <th>目标属地</th>
+            <th>内容</th>
+            <th>结果</th>
+            <th>级别</th>
+        </tr>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.datetime }}</td>
+            <td>{{ log.action }}</td>
+            <td>{{ log.operator_ip }}</td>
+            <td>{{ log.operator_location }}</td>
+            <td>{{ log.target_ip }}</td>
+            <td>{{ log.target_location }}</td>
+            <td>{{ log.content }}</td>
+            <td>{{ log.result }}</td>
+            <td>{{ log.level }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <div class="pagination">
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+                <b>{{ p }}</b>
+            {% else %}
+                <a href="?date_range={{ date_range }}&page={{ p }}&operator_ip={{ operator_ip }}&target_ip={{ target_ip }}&action={{ action }}&operator_location={{ operator_location }}&target_location={{ target_location }}&content={{ content }}&result={{ result }}&level={{ level }}">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+    </div>
+</body>
+</html>
