@@ -694,7 +694,7 @@ def _restart_server():
     time.sleep(1)
     os.execv(sys.executable, [sys.executable] + sys.argv) # 重启当前进程
 
-def get_news():
+def get_news_auto():
     """定时获取新闻并推送"""
     print("定时获取新闻任务开始")
     try:
@@ -746,7 +746,7 @@ def get_news():
 # 调度器配置
 Config.load_config_vars()  # 初始化时加载配置变量
 scheduler = BackgroundScheduler()
-scheduler.add_job(lambda: socketio.start_background_task(get_news), 'interval', seconds=int(config_values.get('get_news_time', '300')))# 每n秒获取一次新闻
+scheduler.add_job(lambda: socketio.start_background_task(get_news_auto), 'interval', seconds=int(config_values.get('get_news_time', '300')))# 每n秒获取一次新闻
 scheduler.start()
 
 if __name__ == '__main__':
