@@ -10,6 +10,8 @@ from openai import OpenAI
 from bs4 import BeautifulSoup
 
 app = Flask(__name__) # 创建 Flask 应用
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 # 存储路径定义
@@ -237,10 +239,10 @@ class API:
             return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
     
     def get_client_ip():
-        """获取客户端真实IP（兼容代理服务器）"""
-        if request.headers.getlist("X-Forwarded-For"):
-            return request.headers.getlist("X-Forwarded-For")[0].split(',')[0]
-        return request.remote_addr
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        if ip:
+            ip = ip.split(',')[0].strip()
+        return ip or '未知'
     
     def get_ip_location(ip):
         """获取IP的地理位置信息"""
