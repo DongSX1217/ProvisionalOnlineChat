@@ -545,14 +545,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function sendMessage() {
         console.log('Sending message...');
 
-        // 获取用户IP
-        if (!userIP) {
-            showError('无法获取用户IP');
-            return;
-        }
-        
-        // 检查是否在限制IP名单中
-        if (blockedIps.includes(userIP)) {
+        // 检查是否在限制IP名单中（只有在能获取到IP时才检查）
+        if (userIP && userIP !== 'unknown' && blockedIps.includes(userIP)) {
             showError('您的IP已被限制发言');
             return;
         }
@@ -565,11 +559,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const reader = new FileReader();
             reader.onload = function(e) {
                 imageData = e.target.result;
-                socket.emit('send_message', {
+                const data = {
                     username: username,
-                    message: message,
-                    image: imageData
-                });
+                    message: message
+                };
+                // 只有在有有效IP时才添加image字段
+                if (imageData) {
+                    data.image = imageData;
+                }
+                socket.emit('send_message', data);
                 removeSelectedImage();
             };
             reader.readAsDataURL(selectedImage);
@@ -585,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (messageInput) messageInput.value = '';
     }
-    
+
     // 发送通知
     function sendNotification(title, body) {
         if (!notificationPermission) return;
@@ -754,8 +752,9 @@ document.addEventListener('DOMContentLoaded', function() {
         ipInfo.className = 'ip-info';
         
         // 判断当前用户是否是管理员（能看真实IP）
-        const currentUserIsAdmin = adminIps.includes(userIP);
-        const displayIp = currentUserIsAdmin ? msg.ip : maskIp(msg.ip);
+        // 只有在能获取到IP且用户IP有效时才检查管理员权限
+        const currentUserIsAdmin = userIP && userIP !== 'unknown' && adminIps.includes(userIP);
+        const displayIp = (currentUserIsAdmin && msg.ip) ? msg.ip : maskIp(msg.ip || 'unknown');
         
         const ipAddress = document.createElement('span');
         ipAddress.className = 'ip-address';
@@ -887,8 +886,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // IP地址打码处理
     function maskIp(ip) {
-        if (!ip || ip === '本地') {
-            return '';
+        if (!ip || ip === '本地' || ip === 'unknown') {
+            return '未知';
         }
         
         // 使用正则表达式匹配IPv4地址

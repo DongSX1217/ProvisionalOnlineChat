@@ -240,27 +240,44 @@ class API:
 
     def get_client_ip():
         """获取客户端真实IP（兼容代理服务器）"""
+        app.logger.info(f"Request environ keys: {list(request.environ.keys())}")
+        
         # 尝试从各种可能的请求头中获取真实IP
         if request.environ.get('HTTP_X_REAL_IP'):
-            return request.environ.get('HTTP_X_REAL_IP')
+            ip = request.environ.get('HTTP_X_REAL_IP')
+            app.logger.info(f"Got IP from HTTP_X_REAL_IP: {ip}")
+            return ip
         elif request.environ.get('HTTP_X_FORWARDED_FOR'):
             # X-Forwarded-For可能包含多个IP，取第一个
             forwarded_for = request.environ.get('HTTP_X_FORWARDED_FOR').split(',')[0].strip()
             if forwarded_for:
+                app.logger.info(f"Got IP from HTTP_X_FORWARDED_FOR: {forwarded_for}")
                 return forwarded_for
         elif request.headers.getlist("X-Forwarded-For"):
-            return request.headers.getlist("X-Forwarded-For")[0].split(',')[0]
+            ip = request.headers.getlist("X-Forwarded-For")[0].split(',')[0]
+            app.logger.info(f"Got IP from X-Forwarded-For header: {ip}")
+            return ip
         elif request.environ.get('HTTP_X_FORWARDED'):
-            return request.environ.get('HTTP_X_FORWARDED')
+            ip = request.environ.get('HTTP_X_FORWARDED')
+            app.logger.info(f"Got IP from HTTP_X_FORWARDED: {ip}")
+            return ip
         elif request.environ.get('HTTP_X_CLUSTER_CLIENT_IP'):
-            return request.environ.get('HTTP_X_CLUSTER_CLIENT_IP')
+            ip = request.environ.get('HTTP_X_CLUSTER_CLIENT_IP')
+            app.logger.info(f"Got IP from HTTP_X_CLUSTER_CLIENT_IP: {ip}")
+            return ip
         elif request.environ.get('HTTP_FORWARDED_FOR'):
-            return request.environ.get('HTTP_FORWARDED_FOR')
+            ip = request.environ.get('HTTP_FORWARDED_FOR')
+            app.logger.info(f"Got IP from HTTP_FORWARDED_FOR: {ip}")
+            return ip
         elif request.environ.get('HTTP_FORWARDED'):
-            return request.environ.get('HTTP_FORWARDED')
+            ip = request.environ.get('HTTP_FORWARDED')
+            app.logger.info(f"Got IP from HTTP_FORWARDED: {ip}")
+            return ip
         
         # 如果以上都失败，使用REMOTE_ADDR
-        return request.remote_addr or 'unknown'
+        remote_addr = request.remote_addr or 'unknown'
+        app.logger.info(f"Using REMOTE_ADDR: {remote_addr}")
+        return remote_addr
     
     def get_ip_location(ip):
         """获取IP的地理位置信息"""
@@ -354,7 +371,9 @@ class Message:
             message = data.get('message', '').strip()
             user_ip = API.get_client_ip()
             blocked_ips = config_values.get('blocked_ips', [])
-            if user_ip != 'unknown' and user_ip in blocked_ips:
+            
+            # 只有在能获取到有效IP时才检查是否被限制发言
+            if user_ip and user_ip != 'unknown' and user_ip in blocked_ips:
                 emit('error', {'message': '您的IP已被限制发言'})
                 return
 
@@ -384,10 +403,10 @@ class Message:
                 emit('error', {'message': '消息内容不能为空'})
                 return
 
-            location = API.get_ip_location(user_ip) if user_ip != 'unknown' else '未知'
+            location = API.get_ip_location(user_ip) if user_ip and user_ip != 'unknown' else '未知'
             message_obj = {
                 'username': username,
-                'ip': user_ip,
+                'ip': user_ip if user_ip else 'unknown',
                 'message': message,
                 'image': image_filename,
                 'image_url': f"/image/{image_filename}" if image_filename else None,
