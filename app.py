@@ -237,24 +237,40 @@ class API:
         except Exception as e:
             app.logger.error(f"验证密码时出错: {str(e)}")
             return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
-    def get_client_ip():
-        # 尝试多种方式获取客户端IP
-        ip = request.environ.get('HTTP_X_REAL_IP', 
-            request.environ.get('HTTP_X_FORWARDED_FOR',
-            request.environ.get('REMOTE_ADDR')))
-        if ip:
-            # 如果是逗号分隔的多个IP，取第一个
-            ip = ip.split(',')[0].strip()
-        return ip or '未知'
 
+    def get_client_ip():
+        """获取客户端真实IP（兼容代理服务器）"""
+        # 尝试从各种可能的请求头中获取真实IP
+        if request.environ.get('HTTP_X_REAL_IP'):
+            return request.environ.get('HTTP_X_REAL_IP')
+        elif request.environ.get('HTTP_X_FORWARDED_FOR'):
+            # X-Forwarded-For可能包含多个IP，取第一个
+            forwarded_for = request.environ.get('HTTP_X_FORWARDED_FOR').split(',')[0].strip()
+            if forwarded_for:
+                return forwarded_for
+        elif request.headers.getlist("X-Forwarded-For"):
+            return request.headers.getlist("X-Forwarded-For")[0].split(',')[0]
+        elif request.environ.get('HTTP_X_FORWARDED'):
+            return request.environ.get('HTTP_X_FORWARDED')
+        elif request.environ.get('HTTP_X_CLUSTER_CLIENT_IP'):
+            return request.environ.get('HTTP_X_CLUSTER_CLIENT_IP')
+        elif request.environ.get('HTTP_FORWARDED_FOR'):
+            return request.environ.get('HTTP_FORWARDED_FOR')
+        elif request.environ.get('HTTP_FORWARDED'):
+            return request.environ.get('HTTP_FORWARDED')
+        
+        # 如果以上都失败，使用REMOTE_ADDR
+        return request.remote_addr or 'unknown'
     
     def get_ip_location(ip):
         """获取IP的地理位置信息"""
-        # 特殊处理本地IP
+        # 特殊处理本地IP和未知IP
         if ip == '127.0.0.1':
             return "本地"
         if ip == '124.23.134.28':
             return "陕西的abandon"
+        if ip == 'unknown':
+            return "未知"
         
         # 检查缓存中是否有该IP的地理位置
         with ip_location_lock:
@@ -338,7 +354,7 @@ class Message:
             message = data.get('message', '').strip()
             user_ip = API.get_client_ip()
             blocked_ips = config_values.get('blocked_ips', [])
-            if user_ip in blocked_ips:
+            if user_ip != 'unknown' and user_ip in blocked_ips:
                 emit('error', {'message': '您的IP已被限制发言'})
                 return
 
@@ -368,7 +384,7 @@ class Message:
                 emit('error', {'message': '消息内容不能为空'})
                 return
 
-            location = API.get_ip_location(user_ip)
+            location = API.get_ip_location(user_ip) if user_ip != 'unknown' else '未知'
             message_obj = {
                 'username': username,
                 'ip': user_ip,
@@ -434,7 +450,9 @@ class Message:
         with history_lock:
             for i, msg in enumerate(chat_history):
                 if msg['sort_key'] == message_id:
-                    if (user_ip not in admin) and (user_ip != msg['ip']):
+                    # 检查用户是否有权限删除消息（管理员或消息发送者）
+                    # 如果无法获取IP，允许管理员操作
+                    if (user_ip != 'unknown' and user_ip not in admin) and (msg['ip'] != 'unknown' and user_ip != msg['ip']):
                         emit('error', {'message': '无权删除此消息'})
                         return
                     if msg.get('image'):
