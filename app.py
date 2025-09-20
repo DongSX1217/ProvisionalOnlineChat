@@ -237,12 +237,16 @@ class API:
         except Exception as e:
             app.logger.error(f"验证密码时出错: {str(e)}")
             return jsonify({'status': 'error', 'message': f'服务器错误: {str(e)}'}), 500
-    
     def get_client_ip():
-        ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        # 尝试多种方式获取客户端IP
+        ip = request.environ.get('HTTP_X_REAL_IP', 
+            request.environ.get('HTTP_X_FORWARDED_FOR',
+            request.environ.get('REMOTE_ADDR')))
         if ip:
+            # 如果是逗号分隔的多个IP，取第一个
             ip = ip.split(',')[0].strip()
         return ip or '未知'
+
     
     def get_ip_location(ip):
         """获取IP的地理位置信息"""
